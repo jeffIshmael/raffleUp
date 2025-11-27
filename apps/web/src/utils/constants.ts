@@ -1,0 +1,36 @@
+export const MOCK_RAFFLES = [
+    {
+      id: 'gold-rush',
+      name: 'Gold Rush',
+      description: 'Select 5 lucky numbers and strike it rich',
+      prizePool: '50,000',
+      ticketPrice: 10,
+      numberRange: 50,
+      entries: 1250,
+      takenNumbers: [1, 5, 7, 12, 23, 45, 49],
+      endsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    },
+    {
+      id: 'mega-jackpot',
+      name: 'Mega Jackpot',
+      description: 'Go big or go home - up to 10 numbers',
+      prizePool: '100,000',
+      ticketPrice: 15,
+      numberRange: 70,
+      entries: 3200,
+      takenNumbers: [3, 14, 25, 38, 42, 55, 61],
+      endsAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+    },
+    {
+      id: 'lucky-seven',
+      name: 'Lucky Seven',
+      description: 'Pick 7 numbers for the ultimate rush',
+      prizePool: '75,000',
+      ticketPrice: 12,
+      numberRange: 60,
+      entries: 2100,
+      takenNumbers: [2, 11, 27, 33, 44, 50, 58],
+      endsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    },
+  ];
+  
