@@ -7,10 +7,11 @@
     "build": "hardhat compile",
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy": "hardhat ignition deploy ignition/modules/Lock.ts",
-    "deploy:alfajores": "hardhat ignition deploy ignition/modules/Lock.ts --network alfajores",
-    "deploy:sepolia": "hardhat ignition deploy ignition/modules/Lock.ts --network sepolia",
-    "deploy:celo": "hardhat ignition deploy ignition/modules/Lock.ts --network celo",
+    "deploy": "hardhat ignition deploy ignition/modules/RaffleUp.ts",
+    "deploy:alfajores": "hardhat ignition deploy ignition/modules/RaffleUp.ts --network alfajores",
+    "deploy:sepolia": "hardhat ignition deploy ignition/modules/RaffleUp.ts --network sepolia",
+    "deployverify:sepolia": "hardhat ignition deploy ignition/modules/RaffleUp.ts --network sepolia --verify",
+    "deploy:celo": "hardhat ignition deploy ignition/modules/RaffleUp.ts --network celo",
     "verify": "hardhat verify",
     "clean": "hardhat clean",
     "typechain": "hardhat typechain"
@@ -37,17 +38,19 @@
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.2.0",
     "@types/mocha": ">=9.1.0",
+    "@types/node": "^20.8.0",
     "chai": "^4.2.0",
     "ethers": "^6.4.0",
     "hardhat": "^2.19.0",
     "hardhat-gas-reporter": "^1.0.8",
     "solidity-coverage": "^0.8.1",
-    "ts-node": ">=8.0.0",
+    "ts-node": "^10.9.2",
     "typechain": "^8.3.0",
-    "typescript": ">=4.5.0",
+    "typescript": "^5.9.3",
     "viem": "^2.0.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.0"
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^17.2.3"
   }
 }

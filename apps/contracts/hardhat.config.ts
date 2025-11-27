@@ -1,5 +1,19 @@
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
+
+const privateKey = process.env.PRIVATE_KEY;
+const celoscanApi = process.env.CELOSCAN_API_KEY;
+if(!privateKey){
+  throw new Error('Private key is not set.');
+}
+
+if(!celoscanApi){
+  throw new Error("Api key is not set.");
+}
+
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -9,6 +23,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
+      viaIR: true,
     },
   },
   networks: {
@@ -37,17 +52,13 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: {
-      celo: process.env.CELOSCAN_API_KEY || "",
-      alfajores: process.env.CELOSCAN_API_KEY || "",
-      sepolia: process.env.CELOSCAN_API_KEY || "",
-    },
+    apiKey: celoscanApi,
     customChains: [
       {
         network: "celo",
         chainId: 42220,
         urls: {
-          apiURL: "https://api.celoscan.io/api",
+          apiURL: "https://api.celoscan.io/v2/api",
           browserURL: "https://celoscan.io",
         },
       },
@@ -55,7 +66,7 @@ const config: HardhatUserConfig = {
         network: "alfajores",
         chainId: 44787,
         urls: {
-          apiURL: "https://api-alfajores.celoscan.io/api",
+          apiURL: "https://api-alfajores.celoscan.io/v2/api",
           browserURL: "https://alfajores.celoscan.io",
         },
       },
@@ -63,7 +74,7 @@ const config: HardhatUserConfig = {
         network: "sepolia",
         chainId: 11142220,
         urls: {
-          apiURL: "https://api-celo-sepolia.blockscout.com/api",
+          apiURL: "https://api-celo-sepolia.blockscout.com/v2/api",
           browserURL: "https://celo-sepolia.blockscout.com",
         },
       },

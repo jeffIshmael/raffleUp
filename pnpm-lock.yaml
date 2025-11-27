@@ -23,6 +23,9 @@ importers:
       '@openzeppelin/contracts':
         specifier: ^5.0.0
         version: 5.4.0
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
     devDependencies:
       '@nomicfoundation/hardhat-chai-matchers':
         specifier: ^2.0.0
@@ -60,6 +63,9 @@ importers:
       '@types/mocha':
         specifier: '>=9.1.0'
         version: 10.0.10
+      '@types/node':
+        specifier: ^20.8.0
+        version: 20.19.25
       chai:
         specifier: ^4.2.0
         version: 4.5.0
@@ -76,13 +82,13 @@ importers:
         specifier: ^0.8.1
         version: 0.8.16(hardhat@2.27.0)
       ts-node:
-        specifier: '>=8.0.0'
+        specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.25)(typescript@5.9.3)
       typechain:
         specifier: ^8.3.0
         version: 8.3.2(typescript@5.9.3)
       typescript:
-        specifier: '>=4.5.0'
+        specifier: ^5.9.3
         version: 5.9.3
       viem:
         specifier: ^2.0.0
@@ -5613,6 +5619,11 @@ packages:
     dependencies:
       esutils: 2.0.3
     dev: true
+
+  /dotenv@17.2.3:
+    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
+    engines: {node: '>=12'}
+    dev: false
 
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
