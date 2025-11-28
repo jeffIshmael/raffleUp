@@ -11,11 +11,10 @@ export default function MobileNav() {
 
   const navItems = [
     { path: '/', icon: '🏠', label: 'Home' },
-    { path: '/#raffles', icon: '🎰', label: 'Raffles' },
-    { path: '/winners', icon: '🎊', label: 'Winners' },
-    { path: '/profile', icon: '👤', label: 'Profile' },
-    { path: '#wallet', icon: '💰', label: 'Wallet' },
+    { path: '/winners', icon: '🏆', label: 'Past draws' },
+    { path: '/profile', icon: '📜',	label: 'History' },
   ];
+  
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-black bg-opacity-95

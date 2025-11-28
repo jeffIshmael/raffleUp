@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-// import NumberGrid from '@/components/NumberGrid';
-// import CheckoutModal from '@/components/CheckoutModal';
+import NumberGrid from '@/components/NumberGrid';
+import CheckoutModal from '@/components/CheckoutModal';
 import { MOCK_RAFFLES } from '@/utils/constants';
 
 export default function RafflePage() {
@@ -60,7 +60,7 @@ export default function RafflePage() {
           hover:border-opacity-60 transition-all duration-300"
         >
           <p className="text-gray-400 text-sm mb-2">Prize Pool</p>
-          <p className="text-2xl font-bold text-amber-400">{raffle.prizePool} cUSD</p>
+          <p className="text-2xl font-bold text-amber-400">{raffle.expectedWinners}</p>
         </div>
         <div className="border border-amber-400 border-opacity-30 p-6 rounded
           hover:border-opacity-60 transition-all duration-300"
@@ -96,12 +96,12 @@ export default function RafflePage() {
           )}
         </div>
 
-        {/* <NumberGrid
+        <NumberGrid
           numberRange={raffle.numberRange}
           selectedNumbers={selectedNumbers}
           takenNumbers={raffle.takenNumbers}
           onSelectNumber={handleSelectNumber}
-        /> */}
+        />
       </div>
 
       {/* Selection Summary & Checkout */}
@@ -164,14 +164,13 @@ export default function RafflePage() {
 
       {/* Checkout Modal */}
       {showCheckout && (
-        <div></div>
-        // <CheckoutModal
-        //   selectedNumbers={selectedNumbers}
-        //   totalCost={totalCost}
-        //   ticketPrice={raffle.ticketPrice}
-        //   onClose={() => setShowCheckout(false)}
-        //   raffleName={raffle.name}
-        // />
+        <CheckoutModal
+          selectedNumbers={selectedNumbers}
+          totalCost={totalCost}
+          ticketPrice={raffle.ticketPrice}
+          onClose={() => setShowCheckout(false)}
+          raffleName={raffle.name}
+        />
       )}
     </div>
   );

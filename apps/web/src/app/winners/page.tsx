@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-// import ConfettiEffect from '@/components/ConfettiEffect';
+import ConfettiEffect from '@/components/ConfettiEffect';
 
 const PAST_WINNERS = [
   {
@@ -36,7 +36,7 @@ const PAST_WINNERS = [
 export default function WinnersPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
-      {/* <ConfettiEffect /> */}
+      <ConfettiEffect />
 
       <h1 className="text-4xl md:text-5xl font-bold mb-4 text-amber-400">
         🎊 Past Winners

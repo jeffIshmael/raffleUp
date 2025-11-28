@@ -1,9 +1,17 @@
-'use client';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 
-import React from 'react';
 import Navbar from '@/components/Navbar';
-import MobileNav from '../components/MobileNav';
+import MobileNav from '@/components/MobileNav';
 import './globals.css';
+import { WalletProvider } from "@/components/wallet-provider"
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'raffle-up',
+  description: 'Raffle Up lets users pick lucky numbers, enter raffles with cUSD, and win transparent, on-chain prizes — all powered by Celo.',
+};
 
 export default function RootLayout({
   children,
@@ -17,20 +25,23 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body className="bg-black text-white overflow-x-hidden">
-        {/* Casino Pattern Background */}
-        <div className="fixed inset-0 opacity-5 pointer-events-none"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(45deg, #D4AF37 0px, #D4AF37 2px, transparent 2px, transparent 8px),
-              repeating-linear-gradient(-45deg, #D4AF37 0px, #D4AF37 2px, transparent 2px, transparent 8px)
-            `,
-          }}
-        />
-        
-        <Navbar />
-        <main className="relative z-10 pt-20 pb-24 md:pb-0">{children}</main>
-        <MobileNav />
+        <WalletProvider>
+          {/* Casino Pattern Background */}
+          <div className="fixed inset-0 opacity-5 pointer-events-none"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(45deg, #D4AF37 2px, #D4AF37 4px, transparent 4px, transparent 10px),
+                repeating-linear-gradient(-45deg, #D4AF37 2px, #D4AF37 4px, transparent 4px, transparent 10px)
+              `,
+            }}
+          />
+          
+          <Navbar />
+          <main className="relative z-10 pt-20 pb-24 md:pb-0">{children}</main>
+          <MobileNav />
+        </WalletProvider>
       </body>
     </html>
   );
 }
+

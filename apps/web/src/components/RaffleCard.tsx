@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-// import Timer from './Timer';
+import Timer from './Timer';
 
 interface RaffleCardProps {
   raffle: any;
@@ -38,8 +38,8 @@ export default function RaffleCard({ raffle, onClick }: RaffleCardProps) {
         <div className="bg-black bg-opacity-50 p-3 rounded border border-amber-400
           border-opacity-20"
         >
-          <p className="text-xs text-gray-400 mb-1">Prize Pool</p>
-          <p className="font-bold text-amber-400">{raffle.prizePool}</p>
+          <p className="text-xs text-gray-400 mb-1">Winning price</p>
+          <p className="font-bold text-amber-400">{raffle.expectedWinners} cUSD</p>
         </div>
         <div className="bg-black bg-opacity-50 p-3 rounded border border-amber-400
           border-opacity-20"
@@ -50,15 +50,15 @@ export default function RaffleCard({ raffle, onClick }: RaffleCardProps) {
         <div className="bg-black bg-opacity-50 p-3 rounded border border-amber-400
           border-opacity-20"
         >
-          <p className="text-xs text-gray-400 mb-1">Entries</p>
+          <p className="text-xs text-gray-400 mb-1">Availabe Entries</p>
           <p className="font-bold text-amber-400">{raffle.entries}</p>
         </div>
       </div>
 
       {/* Timer */}
       <div className="mb-4">
-        <p className="text-xs text-gray-400 mb-2">Draws In</p>
-        {/* <Timer endsAt={raffle.endsAt} /> */}
+        <p className="text-sm font-semibold text-gray-400 mb-2">Draws In:</p>
+        <Timer endsAt={raffle.endsAt} />
       </div>
 
       {/* CTA */}
