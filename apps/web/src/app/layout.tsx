@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
-import Navbar from "../components/Navbar";
+// import Navbar from "../components/Navbar";
 import MobileNav from '../components/MobileNav';
 import './globals.css';
 import { WalletProvider } from "../components/wallet-provider"
@@ -36,7 +36,7 @@ export default function RootLayout({
             }}
           />
           
-          <Navbar />
+          {/* <Navbar /> */}
           <main className="relative z-10 pt-20 pb-24 md:pb-0">{children}</main>
           <MobileNav />
         </WalletProvider>
