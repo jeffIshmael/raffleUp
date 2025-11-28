@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAccount, useBalance } from "wagmi";
 import { ConnectButton } from "./connect-button";
-import { cUSDAddress } from "@/Constants/constants";
+import { cUSDAddress } from "../Constants/constants";
 
 export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
