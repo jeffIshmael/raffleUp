@@ -11,7 +11,7 @@ export default function Navbar() {
 
   const { address, isConnected } = useAccount();
 
-  // Fetch wallet balance (CELO by default — change to cUSD below)
+  // Fetch cUSD wallet balance 
   const { data: balanceData } = useBalance({
     address: address,
     chainId: 11142220, 
@@ -98,5 +98,3 @@ export default function Navbar() {
   );
 }
 
-/* Extra class for styling links */
-const navLink = "text-gray-300 hover:text-amber-400 transition-colors font-medium";
