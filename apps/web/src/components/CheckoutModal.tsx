@@ -100,7 +100,7 @@ export default function CheckoutModal({
                     <span className="font-semibold text-amber-400">{selectedNumbers.length}</span>
                   </div>
                   <div className="flex justify-between text-gray-300">
-                    <span>Price per Number:</span>
+                    <span>Price per Ticket:</span>
                     <span className="font-semibold text-amber-400">{ticketPrice} cUSD</span>
                   </div>
                   <div className="border-t border-amber-400 border-opacity-20 pt-3 flex justify-between">

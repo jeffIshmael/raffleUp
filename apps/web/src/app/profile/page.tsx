@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 const USER_DATA = {
-  wallet: '0x1234567890abcdef1234567890abcdef12345678',
+  wallet: '0x1234',
   totalWagered: 2500,
   totalWinnings: 8500,
   participations: [
@@ -47,9 +47,6 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
-      <h1 className="text-4xl md:text-5xl font-bold mb-12 text-amber-400">
-        👤 Your Profile
-      </h1>
 
       {/* Wallet & Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">

@@ -20,6 +20,7 @@ export default function MobileNav() {
   const navItems = [
     { path: '/', icon: '🏠', label: 'Home' },
     { path: '/winners', icon: '🏆', label: 'Past draws' },
+    { path: '/#', icon: '🎟️',	label: 'My Tickets' },
     { path: '/profile', icon: '📜',	label: 'History' },
   ];
   

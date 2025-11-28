@@ -72,6 +72,9 @@ export default function Navbar() {
                 Past Draws
               </Link>
               <Link href="/profile" className={navLinkClasses("/profile")}>
+                My Tickets
+              </Link>
+              <Link href="/profile" className={navLinkClasses("/profile")}>
                 My History
               </Link>
               {isAdmin && (
