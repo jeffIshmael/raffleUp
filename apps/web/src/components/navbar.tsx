@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAccount, useBalance } from "wagmi";
 import { ConnectButton } from "./connect-button";
 import { cUSDAddress } from "../Constants/constants";
@@ -10,6 +11,7 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const { address, isConnected } = useAccount();
+  const pathname = usePathname();
 
   // Fetch cUSD wallet balance 
   const { data: balanceData } = useBalance({
@@ -31,6 +33,19 @@ export default function Navbar() {
     }
   }, [address]);
 
+  const isActive = (path: string) => {
+    if (!pathname) return false;
+    if (path === "/") return pathname === "/";
+    return pathname.startsWith(path);
+  };
+
+  const navLinkClasses = (path: string) =>
+    `nav-link transition-colors pb-1 border-b-2 ${
+      isActive(path)
+        ? "text-amber-400 border-amber-400"
+        : "text-gray-300 border-transparent hover:text-amber-400"
+    }`;
+
   return (
     <>
       {/* DESKTOP NAV */}
@@ -50,10 +65,20 @@ export default function Navbar() {
           {/* Nav Links */}
           {isConnected && (
             <div className="flex items-center gap-8">
-              <Link href="/" className="nav-link">Home</Link>
-              <Link href="/winners" className="nav-link">Past Draws</Link>
-              <Link href="/profile" className="nav-link">My History</Link>
-              {isAdmin && <Link href="/admin" className="nav-link">Admin</Link>}
+              <Link href="/" className={navLinkClasses("/")}>
+                Home
+              </Link>
+              <Link href="/winners" className={navLinkClasses("/winners")}>
+                Past Draws
+              </Link>
+              <Link href="/profile" className={navLinkClasses("/profile")}>
+                My History
+              </Link>
+              {isAdmin && (
+                <Link href="/admin" className={navLinkClasses("/admin")}>
+                  Admin
+                </Link>
+              )}
             </div>
           )}
 
@@ -73,12 +98,12 @@ export default function Navbar() {
       <nav
         className="fixed top-0 left-0 right-0 z-50 md:hidden 
         bg-black bg-opacity-90 backdrop-blur-md 
-        border-b border-amber-400 border-opacity-20 px-4 py-3
+        border-b border-amber-400 border-opacity-20 px-4 py-4
         flex items-center justify-between"
       >
 
         {/* Logo */}
-        <Link href="/" className="text-xl font-bold tracking-wider">
+        <Link href="/" className="text-2xl font-bold tracking-wider">
           <span className="text-white">RAFFLE</span>
           <span className="text-amber-400 ml-1">UP</span>
         </Link>
@@ -87,7 +112,7 @@ export default function Navbar() {
         {/* Wallet Balance + Button */}
         <div className="flex items-center gap-3">
           {isConnected && (
-            <span className="text-amber-400 text-sm font-semibold">
+            <span className="text-amber-400 text-md font-semibold">
               {walletBalance} cUSD
             </span>
           )}

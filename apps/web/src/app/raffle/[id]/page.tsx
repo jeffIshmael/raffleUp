@@ -55,7 +55,7 @@ export default function RafflePage() {
       </div>
 
       {/* Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
         <div className="border border-amber-400 border-opacity-30 p-6 rounded
           hover:border-opacity-60 transition-all duration-300"
         >

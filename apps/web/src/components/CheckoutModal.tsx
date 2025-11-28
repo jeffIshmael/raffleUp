@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 interface CheckoutModalProps {
   selectedNumbers: number[];
@@ -21,6 +21,11 @@ export default function CheckoutModal({
 }: CheckoutModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<'review' | 'confirm' | 'success'>('review');
+  const txHash = useMemo(
+    () => `0x${Math.random().toString(16).slice(2, 10)}`,
+    []
+  );
+  const explorerUrl = `https://celoscan.io/tx/${txHash}`;
 
   const handleConfirm = async () => {
     setIsProcessing(true);
@@ -43,12 +48,12 @@ export default function CheckoutModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-75 z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-black bg-opacity-75 z-[60] transition-opacity duration-300"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
         <div
           className="bg-black border-2 border-amber-400 rounded-lg shadow-2xl shadow-amber-400/30 max-w-md w-full"
           onClick={(e) => e.stopPropagation()}
@@ -137,12 +142,23 @@ export default function CheckoutModal({
                   <p className="text-xl font-bold text-green-400 mb-2">Payment Successful!</p>
                   <p className="text-gray-400 mb-4">Your {selectedNumbers.length} numbers have been registered.</p>
                   <p className="text-sm text-gray-500">
-                    Transaction ID: <span className="font-mono text-xs text-gray-400">0x{Math.random().toString(16).slice(2, 10)}</span>
+                    Transaction ID:{' '}
+                    <span className="font-mono text-xs text-gray-400">
+                      {txHash}
+                    </span>
                   </p>
                 </div>
                 <div className="bg-green-400 bg-opacity-10 border border-green-400 border-opacity-30 rounded p-3 text-sm text-green-300">
                   You're all set! Good luck! 🍀
                 </div>
+                <a
+                  href={explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded border border-green-400 text-green-300 font-semibold hover:bg-green-400 hover:text-black transition-colors duration-300"
+                >
+                  View on-chain ↗
+                </a>
               </div>
             )}
           </div>
