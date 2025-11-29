@@ -35,7 +35,6 @@ model Raffle {
   ticketPrice     String
   startNo         Int
   endNo           Int
-  startDate       DateTime
   endDate         DateTime
   status          String
   takenNos        String?

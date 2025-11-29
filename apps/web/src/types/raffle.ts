@@ -8,7 +8,6 @@ export interface Raffle {
   ticketPrice: string;
   startNo: number;
   endNo: number;
-  startDate: Date;
   endDate: Date;
   status: string;
   takenNos: string | null;

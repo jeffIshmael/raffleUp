@@ -11,7 +11,6 @@ interface CreateRaffleForm {
   name: string;
   description: string;
   ticketPrice: string;
-  startDate: string;
   endDate: string;
   fromNumber: string;
   toNumber: string;
@@ -36,7 +35,6 @@ export default function AdminPage() {
     name: "",
     description: "",
     ticketPrice: "",
-    startDate: "",
     endDate: "",
     fromNumber: "",
     toNumber: "",
@@ -78,7 +76,6 @@ export default function AdminPage() {
       !formData.name ||
       !formData.description ||
       !formData.ticketPrice ||
-      !formData.startDate ||
       !formData.endDate ||
       !formData.fromNumber ||
       !formData.toNumber
@@ -97,19 +94,10 @@ export default function AdminPage() {
       return;
     }
 
-    // Convert dates to UNIX timestamps
-    const startDateTimestamp = Math.floor(
-      new Date(formData.startDate).getTime() / 1000
-    );
     const endDateTimestamp = Math.floor(
       new Date(formData.endDate).getTime() / 1000
     );
 
-    // Validate date order
-    if (startDateTimestamp >= endDateTimestamp) {
-      showError("End date must be AFTER start date.");
-      return;
-    }
 
     try {
       setIsCreating(true);
@@ -125,7 +113,6 @@ export default function AdminPage() {
           BigInt(fromNum),
           BigInt(toNum),
           ticketPriceWei,
-          BigInt(startDateTimestamp),
           BigInt(endDateTimestamp),
         ],
       });
@@ -159,7 +146,6 @@ export default function AdminPage() {
         ticketPrice: formData.ticketPrice,
         startNo: from,
         endNo: to,
-        startDate: new Date(formData.startDate),
         endDate: new Date(formData.endDate),
         status: "not started",
       };
@@ -189,7 +175,6 @@ export default function AdminPage() {
       name: "",
       description: "",
       ticketPrice: "",
-      startDate: "",
       endDate: "",
       fromNumber: "",
       toNumber: "",
@@ -516,18 +501,6 @@ export default function AdminPage() {
 
             {/* Start & End Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-gray-300 font-semibold mb-2">
-                  Start Date *
-                </label>
-                <input
-                  type="datetime-local"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-3 bg-black border-2 border-amber-400/30 rounded text-white focus:border-opacity-100 outline-none"
-                />
-              </div>
 
               <div>
                 <label className="block text-gray-300 font-semibold mb-2">
@@ -641,7 +614,6 @@ export default function AdminPage() {
                 Number(formData.toNumber) <= Number(formData.fromNumber) ||
                 !formData.ticketPrice ||
                 !formData.name ||
-                !formData.startDate ||
                 !formData.endDate
               }
               className="w-full px-6 py-3 bg-amber-400 text-black font-bold rounded hover:bg-amber-300 transition-colors shadow-lg disabled:opacity-30 disabled:cursor-not-allowed"

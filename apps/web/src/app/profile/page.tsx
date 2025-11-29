@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAccount, useSendTransaction } from "wagmi";
+import { useAccount } from "wagmi";
 import {
   getUserRaffleHistory,
   getUserProfileStats,
@@ -28,8 +28,6 @@ export default function ProfilePage() {
   const [pageState, setPageState] = useState<ProfileState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [filter, setFilter] = useState<TicketFilter>("all");
-  const { data: hash, sendTransaction } = useSendTransaction();
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!isConnected || !address) {
@@ -71,18 +69,7 @@ export default function ProfilePage() {
     return t.status === filter;
   });
 
-  const sendCelo = async () => {
-    try {
-      setSending(true);
-      const to = "0x4821ced48fb4456055c86e42587f61c1f39c6315" as `0x${string}`;
-      const value = "0.6";
-      sendTransaction({ to, value: parseEther(value) });
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setSending(false);
-    }
-  };
+
 
   const formatAddress = (addr: string) =>
     `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -125,16 +112,6 @@ export default function ProfilePage() {
             </div>
             <p className="text-xs text-gray-500 mt-2 font-mono">{address}</p>
           </div>
-
-          <button
-            onClick={() => sendCelo()}
-            className="bg-amber-400 text-black"
-          >
-            {sending ? "sending..." : "send celo"}
-          </button>
-          {hash && (
-            <div className="text-amber-300">Transaction Hash: {hash}</div>
-          )}
 
           {/* Total Tickets */}
           <div className="border-2 border-blue-500 border-opacity-30 rounded p-6 bg-black bg-opacity-50">

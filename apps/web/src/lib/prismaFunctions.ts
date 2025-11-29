@@ -11,7 +11,6 @@ interface Raffle {
   ticketPrice: string;
   startNo: number;
   endNo: number;
-  startDate: Date;
   endDate: Date;
   status: string;
 }
@@ -67,7 +66,6 @@ export async function createRaffle(params: Raffle) {
         ticketPrice: params.ticketPrice,
         startNo: params.startNo,
         endNo: params.endNo,
-        startDate: params.startDate,
         endDate: params.endDate,
         status: params.status,
         takenNos: JSON.stringify([]),
