@@ -227,7 +227,7 @@ export default function CheckoutModal({
                   <p className="text-sm text-gray-500">
                     Transaction ID:{" "}
                     <span className="font-mono text-xs text-gray-400">
-                      {txHash}
+                      {sendTxHash}
                     </span>
                   </p>
                 </div>
