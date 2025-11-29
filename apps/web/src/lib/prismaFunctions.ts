@@ -92,10 +92,11 @@ export async function getRaffleById(raffleId: number) {
   }
 }
 
-//   BUY RAFFLE TICKET
+// BUY RAFFLE TICKET
+
 export async function buyRaffleTicket(params: BuyRaffle) {
   try {
-    // 1. Register user if not found
+    // ========== 1. REGISTER USER IF NOT FOUND ==========
     const walletRegistered = await checkWallet(params.address);
     if (!walletRegistered) {
       await prisma.user.create({
@@ -106,47 +107,113 @@ export async function buyRaffleTicket(params: BuyRaffle) {
       });
     }
 
-    // 2. Get raffle
+    // ========== 2. GET RAFFLE ==========
     const raffle = await getRaffleById(params.raffleId);
     if (!raffle) return null;
 
-    const selectedNumbers = raffle.takenNos ? JSON.parse(raffle.takenNos) : [];
-    const chosenData = raffle.chosenData ? JSON.parse(raffle.chosenData) : [];
+    // --- existing data ---
+    const existingTakenNos = raffle.takenNos ? JSON.parse(raffle.takenNos) : [];
+    const existingChosenData = raffle.chosenData ? JSON.parse(raffle.chosenData) : [];
 
-    // Add selected numbers
-    selectedNumbers.push(...params.selectedNos);
+    // merge taken numbers
+    const updatedTakenNos = Array.from(new Set([...existingTakenNos, ...params.selectedNos]));
 
-    // Add user & their chosen numbers
-    chosenData.push({
-      buyer: params.address,
-      numbers: params.selectedNos,
-    });
+    // merge chosenData
+    const buyerIndex = existingChosenData.findIndex((c: any) => c.buyer === params.address);
 
-    // 3. Update the raffle
+    if (buyerIndex === -1) {
+      // user not present → add new entry
+      existingChosenData.push({
+        buyer: params.address,
+        numbers: params.selectedNos,
+      });
+    } else {
+      // user exists → merge numbers into existing record
+      const oldNumbers = existingChosenData[buyerIndex].numbers;
+      const mergedNumbers = Array.from(new Set([...oldNumbers, ...params.selectedNos]));
+      existingChosenData[buyerIndex].numbers = mergedNumbers;
+    }
+
+    // ========== 3. UPDATE RAFFLE ==========
     const updatedRaffle = await prisma.raffle.update({
       where: { id: params.raffleId },
       data: {
-        takenNos: JSON.stringify(selectedNumbers),
-        chosenData: JSON.stringify(chosenData),
+        takenNos: JSON.stringify(updatedTakenNos),
+        chosenData: JSON.stringify(existingChosenData),
       },
     });
 
-    // 4. Update user's raffleIds
+    // ========== 4. UPDATE USER'S RAFFLE IDS ==========
     const user = await prisma.user.findUnique({
       where: { address: params.address },
     });
 
-    const userRaffleData = user?.raffleIds ? JSON.parse(user.raffleIds) : [];
+    let raffleTrack = user?.raffleIds ? JSON.parse(user.raffleIds) : [];
 
-    userRaffleData.push({
-      raffleId: params.raffleId,
-      numbers: params.selectedNos,
-    });
+    const index = raffleTrack.findIndex((r: any) => r.raffleId === params.raffleId);
+
+    if (index === -1) {
+      // new raffle entry
+      raffleTrack.push({
+        raffleId: params.raffleId,
+        numbers: params.selectedNos,
+      });
+    } else {
+      // update existing raffle entry → merge numbers
+      const mergedNumbers = Array.from(
+        new Set([...raffleTrack[index].numbers, ...params.selectedNos])
+      );
+      raffleTrack[index].numbers = mergedNumbers;
+    }
 
     await prisma.user.update({
       where: { address: params.address },
-      data: { raffleIds: JSON.stringify(userRaffleData) },
+      data: { raffleIds: JSON.stringify(raffleTrack) },
     });
+
+    // ========== 5. UPDATE OR CREATE USER TICKET ==========
+    const existingTicket = await prisma.ticket.findUnique({
+      where: {
+        raffleId_userAddress: {
+          raffleId: params.raffleId,
+          userAddress: params.address,
+        },
+      },
+    });
+
+    const newNumberSet = existingTicket
+      ? Array.from(
+          new Set([
+            ...JSON.parse(existingTicket.selectedNumbers),
+            ...params.selectedNos,
+          ])
+        )
+      : params.selectedNos;
+
+    if (!existingTicket) {
+      // create fresh ticket
+      await prisma.ticket.create({
+        data: {
+          raffleId: params.raffleId,
+          userAddress: params.address,
+          selectedNumbers: JSON.stringify(newNumberSet),
+          amountPaid: "0", // you can update later if needed
+        },
+      });
+    } else {
+      // update existing ticket
+      await prisma.ticket.update({
+        where: {
+          raffleId_userAddress: {
+            raffleId: params.raffleId,
+            userAddress: params.address,
+          },
+        },
+        data: {
+          selectedNumbers: JSON.stringify(newNumberSet),
+        },
+      });
+    }
 
     return updatedRaffle;
   } catch (error) {
@@ -154,6 +221,7 @@ export async function buyRaffleTicket(params: BuyRaffle) {
     return null;
   }
 }
+
 
 //   GET USER ACTIVE TICKETS
 export async function getUserActiveTickets(address: string): Promise<Ticket[]> {

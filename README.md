@@ -4,6 +4,54 @@ Raffle Up lets users pick lucky numbers, enter raffles with cUSD, and win transp
 
 A modern Celo blockchain application built with Next.js, TypeScript, and Turborepo.
 
+## 🎯 Overview
+
+**RaffleUp** is a decentralized raffle platform built on the Celo blockchain that brings the excitement of raffles to Web3. Users can:
+
+- 🎫 **Select numbers** in a bus-seat style interface
+- 💰 **Purchase tickets** with cUSD (Celo stablecoin)
+- 🎲 **Participate** in transparent, on-chain raffles
+- 🏆 **Win prizes** with automatic smart contract-based payouts
+- 📊 **Track history** of all participations and winnings
+
+All transactions are transparent, immutable, and controlled by audited smart contracts.
+
+---
+
+## ✨ Features
+
+### 🎮 User Features
+- ✅ **Wallet Connection** - Connect via MetaMask/Celo Wallet
+- ✅ **Number Selection** - Beautiful, interactive bus-seat style grid
+- ✅ **Live Raffles** - Browse and join active raffles
+- ✅ **Real-time Updates** - See taken numbers as others join
+- ✅ **Purchase History** - Track all tickets and outcomes
+- ✅ **Winnings Dashboard** - View past wins and prizes
+- ✅ **Profile Management** - Wallet stats and participation history
+
+### 🎲 Raffle Features
+- ✅ **Multiple Raffle Types** - Different price points and pools
+- ✅ **Automatic Drawings** - Smart contract-powered winner selection
+- ✅ **Transparent Winners** - All past winners visible
+- ✅ **Real Payouts** - Instant cUSD distribution to winners
+- ✅ **Refund Mechanism** - Automatic refunds for raffles with 1 entry
+
+### 🛡️ Admin Features
+- ✅ **Create Raffles** - Full control over raffle parameters
+- ✅ **Close Raffles** - Trigger winner selection and payouts
+- ✅ **View Analytics** - Track raffle statistics
+- ✅ **Manage Winners** - Record and verify winners
+
+### 🎨 UI/UX Features
+- ✅ **Casino Aesthetic** - Premium dark theme with gold accents
+- ✅ **Responsive Design** - Mobile, tablet, and desktop optimized
+- ✅ **Loading States** - Beautiful skeleton loaders
+- ✅ **Error Handling** - User-friendly error messages
+- ✅ **Animations** - Smooth transitions and interactive feedback
+
+---
+
+
 ## Getting Started
 
 1. Install dependencies:
