@@ -281,7 +281,7 @@ export async function getUserRaffleHistory(address: string): Promise<Ticket[]> {
         amount: (
           parseFloat(raffle.ticketPrice) * data.numbers.length
         ).toString(),
-        purchaseDate: raffle.startDate,
+        purchaseDate: raffle.endDate,
         status: ticketStatus,
       };
 

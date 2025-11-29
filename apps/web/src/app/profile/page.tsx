@@ -246,12 +246,12 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Date */}
-                  <div>
+                  {/* <div>
                     <p className="text-xs text-gray-400 mb-1">Date</p>
                     <p className="text-sm text-gray-300">
                       {new Date(ticket.purchaseDate).toLocaleDateString()}
                     </p>
-                  </div>
+                  </div> */}
 
                   {/* Status Badge */}
                   <div>
