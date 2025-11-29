@@ -1,12 +1,25 @@
-'use client';
+"use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { waitForTransactionReceipt } from "@wagmi/core";
+import { useAccount, useWriteContract } from "wagmi";
+import {
+  cUSDAddress,
+  raffleUpAbi,
+  raffleUpAddress,
+} from "@/Constants/constants";
+import { erc20Abi, parseEther } from "viem";
+import { wagmiConfig } from "./wallet-provider";
+import { buyRaffleTicket } from "@/lib/prismaFunctions";
 
 interface CheckoutModalProps {
   selectedNumbers: number[];
   totalCost: number;
   ticketPrice: number;
   raffleName: string;
+  raffleBlockchainId: number;
+  raffleId: number;
   onClose: () => void;
   onConfirm?: () => void;
 }
@@ -16,32 +29,85 @@ export default function CheckoutModal({
   totalCost,
   ticketPrice,
   raffleName,
+  raffleBlockchainId,
+  raffleId,
   onClose,
   onConfirm,
 }: CheckoutModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [step, setStep] = useState<'review' | 'confirm' | 'success'>('review');
+  const [step, setStep] = useState<"review" | "confirm" | "success">("review");
   const txHash = useMemo(
     () => `0x${Math.random().toString(16).slice(2, 10)}`,
     []
   );
+  const { address, isConnected } = useAccount();
+  const { writeContractAsync } = useWriteContract();
   const explorerUrl = `https://celoscan.io/tx/${txHash}`;
 
+  // function to buy tickets
   const handleConfirm = async () => {
-    setIsProcessing(true);
-    setStep('confirm');
+    if (!isConnected) {
+      toast.error("Please connect wallet.");
+      return;
+    }
+    try {
+      setIsProcessing(true);
+      setStep("confirm");
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      const totalAmountWei = parseEther(totalCost.toString());
+      const bcNumbers = selectedNumbers as unknown as BigInt[];
 
-    setStep('success');
-    setIsProcessing(false);
+      // approve function
+      const approveTx = await writeContractAsync({
+        address: cUSDAddress,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [raffleUpAddress, totalAmountWei],
+      });
 
-    // Close modal after success
-    setTimeout(() => {
-      onConfirm?.();
-      onClose();
-    }, 10000);
+      const transactionReceipt = waitForTransactionReceipt(wagmiConfig, {
+        hash: approveTx,
+      });
+
+      if (!transactionReceipt) {
+        toast.error("Unable to approve tx. please try again");
+        return;
+      }
+
+      // the function now
+      const txHash = await writeContractAsync({
+        address: raffleUpAddress,
+        abi: raffleUpAbi,
+        functionName: "joinRaffle",
+        args: [BigInt(raffleBlockchainId), bcNumbers],
+      });
+
+      if (!txHash) {
+        toast.error("Unable to join raffle.");
+        return;
+      }
+
+      // prepare database params
+      const buyParams = {
+        address: address as string,
+        selectedNos: selectedNumbers,
+        raffleId: raffleId,
+      };
+      const result = await buyRaffleTicket(buyParams);
+
+      if (!result) {
+        toast.error("Unable to save to db");
+        return;
+      }
+
+      setStep("success");
+      setIsProcessing(false);
+    } catch (error) {
+      console.log("buying raffle error", error);
+    } finally {
+      setIsProcessing(false);
+      setStep("review");
+    }
   };
 
   return (
@@ -61,35 +127,41 @@ export default function CheckoutModal({
           {/* Header */}
           <div className="bg-gradient-to-r from-amber-400/10 to-amber-600/10 border-b border-amber-400 border-opacity-30 px-6 py-4">
             <h2 className="text-2xl font-bold text-amber-400 text-center">
-              {step === 'review' && '🎰 Order Review'}
-              {step === 'confirm' && '⏳ Processing Payment'}
-              {step === 'success' && '✨ Success!'}
+              {step === "review" && "🎰 Order Review"}
+              {step === "confirm" && "⏳ Processing Payment"}
+              {step === "success" && "✨ Success!"}
             </h2>
           </div>
 
           {/* Content */}
           <div className="p-6">
             {/* Review Step */}
-            {step === 'review' && (
+            {step === "review" && (
               <div className="space-y-6">
                 {/* Raffle Info */}
                 <div className="bg-black bg-opacity-50 border border-amber-400 border-opacity-20 rounded p-4">
                   <p className="text-gray-400 text-sm mb-1">Raffle</p>
-                  <p className="text-xl font-bold text-amber-400">{raffleName}</p>
+                  <p className="text-xl font-bold text-amber-400">
+                    {raffleName}
+                  </p>
                 </div>
 
                 {/* Selected Numbers */}
                 <div className="bg-black bg-opacity-50 border border-amber-400 border-opacity-20 rounded p-4">
-                  <p className="text-gray-400 text-sm mb-3">Your Selected Numbers</p>
+                  <p className="text-gray-400 text-sm mb-3">
+                    Your Selected Numbers
+                  </p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedNumbers.sort((a, b) => a - b).map((num) => (
-                      <span
-                        key={num}
-                        className="bg-amber-400 text-black px-3 py-1 rounded font-bold text-sm shadow-md"
-                      >
-                        #{num}
-                      </span>
-                    ))}
+                    {selectedNumbers
+                      .sort((a, b) => a - b)
+                      .map((num) => (
+                        <span
+                          key={num}
+                          className="bg-amber-400 text-black px-3 py-1 rounded font-bold text-sm shadow-md"
+                        >
+                          #{num}
+                        </span>
+                      ))}
                   </div>
                 </div>
 
@@ -97,52 +169,65 @@ export default function CheckoutModal({
                 <div className="bg-black bg-opacity-50 border border-amber-400 border-opacity-20 rounded p-4 space-y-3">
                   <div className="flex justify-between text-gray-300">
                     <span>Numbers Selected:</span>
-                    <span className="font-semibold text-amber-400">{selectedNumbers.length}</span>
+                    <span className="font-semibold text-amber-400">
+                      {selectedNumbers.length}
+                    </span>
                   </div>
                   <div className="flex justify-between text-gray-300">
                     <span>Price per Ticket:</span>
-                    <span className="font-semibold text-amber-400">{ticketPrice} cUSD</span>
+                    <span className="font-semibold text-amber-400">
+                      {ticketPrice} cUSD
+                    </span>
                   </div>
                   <div className="border-t border-amber-400 border-opacity-20 pt-3 flex justify-between">
                     <span className="font-bold text-white">Total Amount:</span>
-                    <span className="text-2xl font-bold text-green-400">{totalCost} cUSD</span>
+                    <span className="text-2xl font-bold text-green-400">
+                      {totalCost} cUSD
+                    </span>
                   </div>
                 </div>
 
                 {/* Disclaimer */}
                 <div className="bg-amber-400 bg-opacity-5 border border-amber-400 border-opacity-20 rounded p-3 text-xs text-gray-400">
                   <p>
-                    ⚠️ By confirming, you agree to participate in this raffle. Your cUSD will be deducted
-                    from your Celo wallet. Winners will be announced when the raffle ends.
+                    ⚠️ By confirming, you agree to participate in this raffle.
+                    Your cUSD will be deducted from your Celo wallet. Winners
+                    will be announced when the raffle ends.
                   </p>
                 </div>
               </div>
             )}
 
             {/* Processing Step */}
-            {step === 'confirm' && (
+            {step === "confirm" && (
               <div className="space-y-6 text-center">
                 <div className="py-8">
-                  <div
-                    className="inline-block w-16 h-16 border-4 border-amber-400 border-opacity-30 border-t-amber-400 rounded-full animate-spin"
-                  />
+                  <div className="inline-block w-16 h-16 border-4 border-amber-400 border-opacity-30 border-t-amber-400 rounded-full animate-spin" />
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-amber-400 mb-2">Processing Payment</p>
-                  <p className="text-gray-400 text-sm">Please confirm the transaction in your wallet...</p>
+                  <p className="text-lg font-semibold text-amber-400 mb-2">
+                    Processing Payment
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Please confirm the transaction in your wallet...
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Success Step */}
-            {step === 'success' && (
+            {step === "success" && (
               <div className="space-y-6 text-center py-4">
                 <div className="text-6xl animate-bounce">🎉</div>
                 <div>
-                  <p className="text-xl font-bold text-green-400 mb-2">Payment Successful!</p>
-                  <p className="text-gray-400 mb-4">Your {selectedNumbers.length} numbers have been registered.</p>
+                  <p className="text-xl font-bold text-green-400 mb-2">
+                    Payment Successful!
+                  </p>
+                  <p className="text-gray-400 mb-4">
+                    Your {selectedNumbers.length} numbers have been registered.
+                  </p>
                   <p className="text-sm text-gray-500">
-                    Transaction ID:{' '}
+                    Transaction ID:{" "}
                     <span className="font-mono text-xs text-gray-400">
                       {txHash}
                     </span>
@@ -165,7 +250,7 @@ export default function CheckoutModal({
 
           {/* Footer */}
           <div className="border-t border-amber-400 border-opacity-20 px-6 py-4 flex gap-3">
-            {step === 'review' && (
+            {step === "review" && (
               <>
                 <button
                   onClick={onClose}
@@ -177,12 +262,12 @@ export default function CheckoutModal({
                   onClick={handleConfirm}
                   className="flex-1 px-4 py-3 rounded bg-amber-400 text-black font-bold hover:bg-amber-300 transition-all duration-300 shadow-lg shadow-amber-400/30"
                 >
-                  💳 Pay {totalCost} cUSD
+                  Pay {totalCost} cUSD
                 </button>
               </>
             )}
 
-            {step === 'confirm' && (
+            {step === "confirm" && (
               <button
                 disabled
                 className="w-full px-4 py-2 rounded bg-gray-600 text-gray-400 font-semibold cursor-not-allowed"
@@ -191,7 +276,7 @@ export default function CheckoutModal({
               </button>
             )}
 
-            {step === 'success' && (
+            {step === "success" && (
               <button
                 onClick={onClose}
                 className="w-full px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-500 transition-all duration-300"

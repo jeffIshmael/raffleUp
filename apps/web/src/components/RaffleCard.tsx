@@ -46,19 +46,19 @@ export default function RaffleCard({ raffle, onClick }: RaffleCardProps) {
         <div className="bg-black bg-opacity-50 p-3 rounded border border-amber-400
           border-opacity-20"
         >
-          <p className="text-xs text-gray-400 mb-1">Prize Pool</p>
-          <p className="font-bold text-amber-400">{raffle.winningPrice} cUSD</p>
+          <p className="text-xs text-gray-400 mb-1">Win prize</p>
+          <p className="font-bold text-teal-400">{raffle.winningPrice} cUSD</p>
         </div>
         <div className="bg-black bg-opacity-50 p-3 rounded border border-amber-400
           border-opacity-20"
         >
-          <p className="text-xs text-gray-400 mb-1">Ticket</p>
+          <p className="text-xs text-gray-400 mb-1">Entry fee</p>
           <p className="font-bold text-amber-400">{raffle.ticketPrice} cUSD</p>
         </div>
         <div className="bg-black bg-opacity-50 p-3 rounded border border-amber-400
           border-opacity-20"
         >
-          <p className="text-xs text-gray-400 mb-1">Available</p>
+          <p className="text-xs text-gray-400 mb-1">Available entries</p>
           <p className="font-bold text-amber-400">{availableNumbers}</p>
         </div>
       </div>

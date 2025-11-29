@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import {Toaster} from "sonner"
 
 import './globals.css';
 import { WalletProvider } from "../components/wallet-provider"
@@ -39,6 +40,7 @@ export default function RootLayout({
           <Navbar />
           <main className="relative z-10 pt-20 pb-24 md:pb-0">{children}</main>
           <MobileNav />
+          <Toaster />
         </WalletProvider>
       </body>
     </html>

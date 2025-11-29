@@ -27,6 +27,11 @@ interface ChosenDataItem {
   numbers: number[];
 }
 
+interface WinnerData {
+  address: string;
+  amount: string;
+}
+
 //   GET ALL RAFFLES
 export async function getRaffles() {
   try {
@@ -49,16 +54,29 @@ export async function checkWallet(address: string): Promise<boolean | null> {
   }
 }
 
-//   CREATE RAFFLE
+// create raffle
 export async function createRaffle(params: Raffle) {
   try {
     const raffle = await prisma.raffle.create({
       data: {
-        ...params,
+        title: params.title,
+        description: params.description,
+        expectedWinners: params.expectedWinners,
+        winningPrice: params.winningPrice,
+        blockchainId: params.blockchainId,
+        ticketPrice: params.ticketPrice,
+        startNo: params.startNo,
+        endNo: params.endNo,
+        startDate: params.startDate,
+        endDate: params.endDate,
+        status: params.status,
         takenNos: JSON.stringify([]),
         chosenData: JSON.stringify([]),
+        totalCollected: "0",
+        platformFee: "0",
       },
     });
+
     return raffle;
   } catch (error) {
     console.log("createRaffle error:", error);
@@ -295,108 +313,312 @@ export async function getUserTicketsByStatus(
 
 // Get all past winners (completed raffles with winners)
 export async function getPastWinners() {
-    try {
-      const raffles = await prisma.raffle.findMany({
-        where: {
-          endDate: {
-            lt: new Date(), // Only completed raffles
-          },
+  try {
+    const raffles = await prisma.raffle.findMany({
+      where: {
+        endDate: {
+          lt: new Date(), // Only completed raffles
         },
-        orderBy: {
-          endDate: 'desc',
-        },
-      });
-  
-      const winners = [];
-  
-      for (const raffle of raffles) {
-        if (!raffle.chosenData) continue;
-  
-        const chosenData = JSON.parse(raffle.chosenData) as ChosenDataItem[];
-  
-        // You can add logic here to determine actual winners
-        // For now, showing the last participant as example
-        // In production, this should come from a Winners table
-  
-        for (const participant of chosenData) {
-          winners.push({
-            id: `${raffle.id}-${participant.buyer}`,
-            raffleId: raffle.id,
-            raffleName: raffle.title,
-            winner: `${participant.buyer.slice(0, 6)}...${participant.buyer.slice(-4)}`,
-            walletAddress: participant.buyer,
-            winningNumbers: participant.numbers,
-            amount: raffle.winningPrice,
-            date: new Date(raffle.endDate).toISOString().split('T')[0],
-          });
-        }
+      },
+      orderBy: {
+        endDate: "desc",
+      },
+    });
+
+    const winners = [];
+
+    for (const raffle of raffles) {
+      if (!raffle.chosenData) continue;
+
+      const chosenData = JSON.parse(raffle.chosenData) as ChosenDataItem[];
+
+      // You can add logic here to determine actual winners
+      // For now, showing the last participant as example
+      // In production, this should come from a Winners table
+
+      for (const participant of chosenData) {
+        winners.push({
+          id: `${raffle.id}-${participant.buyer}`,
+          raffleId: raffle.id,
+          raffleName: raffle.title,
+          winner: `${participant.buyer.slice(0, 6)}...${participant.buyer.slice(
+            -4
+          )}`,
+          walletAddress: participant.buyer,
+          winningNumbers: participant.numbers,
+          amount: raffle.winningPrice,
+          date: new Date(raffle.endDate).toISOString().split("T")[0],
+        });
       }
-  
-      return winners;
-    } catch (error) {
-      console.log("getPastWinners error:", error);
-      return [];
     }
+
+    return winners;
+  } catch (error) {
+    console.log("getPastWinners error:", error);
+    return [];
   }
-  
-  // Get user profile stats
-  export async function getUserProfileStats(address: string) {
-    try {
-      const user = await prisma.user.findUnique({ where: { address } });
-      if (!user || !user.raffleIds) {
-        return {
-          totalTickets: 0,
-          totalWagered: '0',
-          totalWinnings: '0',
-          ticketsWon: 0,
-          ticketsLost: 0,
-        };
-      }
-  
-      const userRaffleData = JSON.parse(user.raffleIds) as Array<{
-        raffleId: number;
-        numbers: number[];
-      }>;
-  
-      let totalWagered = 0;
-      let totalWinnings = 0;
-      let ticketsWon = 0;
-      let ticketsLost = 0;
-  
-      for (const data of userRaffleData) {
-        const raffle = await getRaffleById(data.raffleId);
-        if (!raffle) continue;
-  
-        const ticketAmount = parseFloat(raffle.ticketPrice) * data.numbers.length;
-        totalWagered += ticketAmount;
-  
-        const now = new Date();
-        const raffleEndDate = new Date(raffle.endDate);
-  
-        if (raffleEndDate < now) {
-          // Check if user won (this should be updated with actual winner logic)
-          // For now, default to lost
-          ticketsLost += 1;
-        } else {
-          // Active ticket
-        }
-      }
-  
-      return {
-        totalTickets: userRaffleData.length,
-        totalWagered: totalWagered.toFixed(2),
-        totalWinnings: totalWinnings.toFixed(2),
-        ticketsWon,
-        ticketsLost,
-      };
-    } catch (error) {
-      console.log("getUserProfileStats error:", error);
+}
+
+// Get user profile stats
+export async function getUserProfileStats(address: string) {
+  try {
+    const user = await prisma.user.findUnique({ where: { address } });
+    if (!user || !user.raffleIds) {
       return {
         totalTickets: 0,
-        totalWagered: '0',
-        totalWinnings: '0',
+        totalWagered: "0",
+        totalWinnings: "0",
         ticketsWon: 0,
         ticketsLost: 0,
       };
     }
+
+    const userRaffleData = JSON.parse(user.raffleIds) as Array<{
+      raffleId: number;
+      numbers: number[];
+    }>;
+
+    let totalWagered = 0;
+    let totalWinnings = 0;
+    let ticketsWon = 0;
+    let ticketsLost = 0;
+
+    for (const data of userRaffleData) {
+      const raffle = await getRaffleById(data.raffleId);
+      if (!raffle) continue;
+
+      const ticketAmount = parseFloat(raffle.ticketPrice) * data.numbers.length;
+      totalWagered += ticketAmount;
+
+      const now = new Date();
+      const raffleEndDate = new Date(raffle.endDate);
+
+      if (raffleEndDate < now) {
+        // Check if user won (this should be updated with actual winner logic)
+        // For now, default to lost
+        ticketsLost += 1;
+      } else {
+        // Active ticket
+      }
+    }
+
+    return {
+      totalTickets: userRaffleData.length,
+      totalWagered: totalWagered.toFixed(2),
+      totalWinnings: totalWinnings.toFixed(2),
+      ticketsWon,
+      ticketsLost,
+    };
+  } catch (error) {
+    console.log("getUserProfileStats error:", error);
+    return {
+      totalTickets: 0,
+      totalWagered: "0",
+      totalWinnings: "0",
+      ticketsWon: 0,
+      ticketsLost: 0,
+    };
   }
+}
+
+// Record winners in database
+async function recordWinnersInDatabase(
+  raffleId: number,
+  raffleBlockchainId: number,
+  winners: WinnerData[],
+  transactionHash?: string
+): Promise<boolean> {
+  try {
+    const raffle = await prisma.raffle.findUnique({
+      where: { id: raffleId },
+    });
+
+    if (!raffle) {
+      console.error("Raffle not found:", raffleId);
+      return false;
+    }
+
+    // Get chosen data to map winning numbers
+    const chosenData = raffle.chosenData ? JSON.parse(raffle.chosenData) : [];
+
+    // Create winner records
+    for (const winner of winners) {
+      // Find which numbers this user chose in this raffle
+      const userChosenData = chosenData.find(
+        (item: any) => item.buyer.toLowerCase() === winner.address.toLowerCase()
+      );
+
+      const winningNumbers = userChosenData?.numbers || [];
+
+      await prisma.winner.upsert({
+        where: {
+          raffleId_userAddress: {
+            raffleId: raffleId,
+            userAddress: winner.address.toLowerCase(),
+          },
+        },
+        update: {
+          amountWon: winner.amount,
+          transactionHash: transactionHash,
+        },
+        create: {
+          raffleId: raffleId,
+          userAddress: winner.address.toLowerCase(),
+          winningNumbers: JSON.stringify(winningNumbers),
+          amountWon: winner.amount,
+          transactionHash: transactionHash,
+        },
+      });
+
+      // Update user's raffle status to won
+      const user = await prisma.user.findUnique({
+        where: { address: winner.address.toLowerCase() },
+      });
+
+      if (user && user.raffleIds) {
+        const raffleIds = JSON.parse(user.raffleIds);
+        const updatedRaffleIds = raffleIds.map((item: any) => ({
+          ...item,
+          status: item.raffleId === raffleId ? "won" : item.status,
+        }));
+
+        await prisma.user.update({
+          where: { address: winner.address.toLowerCase() },
+          data: {
+            raffleIds: JSON.stringify(updatedRaffleIds),
+          },
+        });
+      }
+    }
+
+    // Update raffle status to closed
+    await prisma.raffle.update({
+      where: { id: raffleId },
+      data: {
+        status: "closed",
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Error recording winners in database:", error);
+    return false;
+  }
+}
+
+// Get winners for a raffle
+export async function getRaffleWinners(raffleId: number) {
+  try {
+    const winners = await prisma.winner.findMany({
+      where: { raffleId },
+      include: {
+        raffle: true,
+      },
+    });
+
+    return winners.map((w) => ({
+      id: w.id,
+      raffleId: w.raffleId,
+      raffleName: w.raffle.title,
+      userAddress: w.userAddress,
+      winningNumbers: JSON.parse(w.winningNumbers),
+      amountWon: w.amountWon,
+      transactionHash: w.transactionHash,
+      createdAt: w.createdAt,
+    }));
+  } catch (error) {
+    console.log("getRaffleWinners error:", error);
+    return [];
+  }
+}
+
+// Get all winners across all raffles
+export async function getAllWinners(limit: number = 100) {
+  try {
+    const winners = await prisma.winner.findMany({
+      include: {
+        raffle: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+    });
+
+    return winners.map((w) => ({
+      id: w.id,
+      raffleId: w.raffleId,
+      raffleName: w.raffle.title,
+      userAddress: w.userAddress,
+      winningNumbers: JSON.parse(w.winningNumbers),
+      amountWon: w.amountWon,
+      transactionHash: w.transactionHash,
+      createdAt: w.createdAt,
+    }));
+  } catch (error) {
+    console.log("getAllWinners error:", error);
+    return [];
+  }
+}
+
+// Get user's winning tickets
+export async function getUserWinnings(userAddress: string) {
+  try {
+    const winnings = await prisma.winner.findMany({
+      where: {
+        userAddress: userAddress.toLowerCase(),
+      },
+      include: {
+        raffle: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return winnings.map((w) => ({
+      id: w.id,
+      raffleId: w.raffleId,
+      raffleName: w.raffle.title,
+      winningNumbers: JSON.parse(w.winningNumbers),
+      amountWon: w.amountWon,
+      transactionHash: w.transactionHash,
+      createdAt: w.createdAt,
+    }));
+  } catch (error) {
+    console.log("getUserWinnings error:", error);
+    return [];
+  }
+}
+
+// Update user's winning status
+export async function updateUserWinningStatus(
+  userAddress: string,
+  raffleId: number
+) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { address: userAddress.toLowerCase() },
+    });
+
+    if (!user || !user.raffleIds) return false;
+
+    const raffleIds = JSON.parse(user.raffleIds);
+    const updated = raffleIds.map((item: any) => ({
+      ...item,
+      status: item.raffleId === raffleId ? "won" : item.status,
+    }));
+
+    await prisma.user.update({
+      where: { address: userAddress.toLowerCase() },
+      data: {
+        raffleIds: JSON.stringify(updated),
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.log("updateUserWinningStatus error:", error);
+    return false;
+  }
+}

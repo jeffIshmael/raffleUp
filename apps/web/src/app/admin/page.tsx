@@ -2,18 +2,19 @@
 
 import React, { useState } from "react";
 import { useRaffles } from "@/hooks/useRaffles";
-import { useWriteContract, useAccount } from "wagmi";
+import { useWriteContract, useAccount, useReadContract } from "wagmi";
 import { raffleUpAbi, raffleUpAddress } from "@/Constants/constants";
+import { createRaffle } from "@/lib/prismaFunctions";
 import { parseEther } from "viem";
 
 interface CreateRaffleForm {
   name: string;
   description: string;
   ticketPrice: string;
-  startDate: string; // <-- added
-  endDate: string; // <-- added
-  fromNumber: string; // <-- added
-  toNumber: string; // <-- added
+  startDate: string;
+  endDate: string;
+  fromNumber: string;
+  toNumber: string;
 }
 
 type TabType = "view" | "create" | "edit";
@@ -22,8 +23,14 @@ export default function AdminPage() {
   const { raffles, addTakenNumbers, updateRaffle } = useRaffles();
   const [activeTab, setActiveTab] = useState<TabType>("view");
   const [editingRaffleId, setEditingRaffleId] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const { data: totalRaffles } = useReadContract({
+    address: raffleUpAddress,
+    abi: raffleUpAbi,
+    functionName: 'raffleCount',
+  })
 
   const [formData, setFormData] = useState<CreateRaffleForm>({
     name: "",
@@ -105,7 +112,9 @@ export default function AdminPage() {
     }
 
     try {
+      setIsCreating(true);
       const ticketPriceWei = parseEther(formData.ticketPrice);
+
 
       // Write to the smart contract
       const txHash = await writeContractAsync({
@@ -121,12 +130,58 @@ export default function AdminPage() {
         ],
       });
 
+      if (!txHash) {
+        showError("Unable to create raffle.");
+        return;
+      }
+
+      const from = Number(formData.fromNumber);
+      const to = Number(formData.toNumber);
+      const ticket = Number(formData.ticketPrice);
+
+      const totalEntries = to - from + 1;
+
+      // Calculate number of winners
+      const winners = Math.ceil(totalEntries / 10); // 1 per 10 entries
+
+      // Prize pool after 1% fee
+      const totalPrizePool = totalEntries * ticket * 0.99;
+
+      // Prize per winner
+      const prizePerWinner = totalPrizePool / winners;
+
+      const databaseParams = {
+        title: formData.name,
+        description: formData.description,
+        expectedWinners: winners,
+        winningPrice: prizePerWinner.toString(),
+        blockchainId: totalRaffles ? Number(totalRaffles) + 1 : 0,
+        ticketPrice: formData.ticketPrice,
+        startNo: from,
+        endNo: to,
+        startDate: new Date(formData.startDate),
+        endDate: new Date(formData.endDate),
+        status: "not started",
+      };
+
+      console.log("registering to database...")
+
+      // register to database
+      const raffle = await createRaffle(databaseParams);
+      if (!raffle) {
+        throw new Error("unable to use prisama.");
+        showError("Not able to create the raffle.");
+        return;
+      }
+
       showSuccess(`Raffle "${formData.name}" created successfully!`);
       console.log("Transaction Hash:", txHash);
     } catch (error: any) {
       console.error(error);
       showError(error?.message || "Error creating raffle.");
       return;
+    } finally {
+      setIsCreating(false);
     }
 
     // Reset form after success
@@ -449,7 +504,8 @@ export default function AdminPage() {
               </label>
               <input
                 type="number"
-                min="1"
+                min="0"
+                step="any"
                 name="ticketPrice"
                 value={formData.ticketPrice}
                 onChange={handleFormChange}
@@ -562,12 +618,12 @@ export default function AdminPage() {
 
                       <p>
                         Prize Amount (each):{" "}
-                        <strong>{prizePerWinner.toFixed(2)} cUSD</strong>
+                        <strong>{prizePerWinner.toFixed(4)} cUSD</strong>
                       </p>
 
                       <p className="text-xs mt-2 opacity-70">
                         *Total prize pool distributed:{" "}
-                        {totalPrizePool.toFixed(2)} cUSD (1% platform fee
+                        {totalPrizePool.toFixed(4)} cUSD (1% platform fee
                         included)
                       </p>
                     </>
@@ -590,7 +646,7 @@ export default function AdminPage() {
               }
               className="w-full px-6 py-3 bg-amber-400 text-black font-bold rounded hover:bg-amber-300 transition-colors shadow-lg disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              🎰 Create Raffle
+              {isCreating ? "creating.." : "🎰 Create Raffle"}
             </button>
           </form>
         </div>

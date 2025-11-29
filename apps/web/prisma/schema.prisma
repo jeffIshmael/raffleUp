@@ -15,26 +15,72 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  address String @unique
-  raffleIds String? // array of raffleIds and numbers chosen a user has purchased
+  id        Int     @id @default(autoincrement())
+  address   String  @unique
+  raffleIds String?
 
+  tickets   Ticket[]
+  winnings  Winner[]
+
+  @@map("users")
 }
 
 model Raffle {
-  id    Int     @id @default(autoincrement())
-  title String
-  description String
+  id              Int     @id @default(autoincrement())
+  title           String
+  description     String
   expectedWinners Int
-  winningPrice String
-  blockchainId Int
-  ticketPrice String
-  startNo Int
-  endNo Int
-  startDate DateTime
-  endDate DateTime
-  status String
-  takenNos String? //json string array of numbers
-  chosenData String? // json string showing an object of user and selected numbers
+  winningPrice    String
+  blockchainId    Int     @unique
+  ticketPrice     String
+  startNo         Int
+  endNo           Int
+  startDate       DateTime
+  endDate         DateTime
+  status          String
+  takenNos        String?
+  chosenData      String?
+  totalCollected  String?
+  platformFee     String?
+
+  tickets Ticket[]
+  winners Winner[]
+
+  @@map("raffles")
 }
 
+model Ticket {
+  id              Int     @id @default(autoincrement())
+
+  raffleId        Int
+  raffle          Raffle  @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+
+  userAddress     String
+  user            User    @relation(fields: [userAddress], references: [address], onDelete: Cascade)
+
+  selectedNumbers String
+  amountPaid      String
+  purchaseDate    DateTime @default(now())
+
+  @@unique([raffleId, userAddress])
+  @@map("tickets")
+}
+
+model Winner {
+  id              Int     @id @default(autoincrement())
+
+  raffleId        Int
+  raffle          Raffle  @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+
+  userAddress     String
+  user            User?   @relation(fields: [userAddress], references: [address], onDelete: Cascade)
+
+  winningNumbers  String
+  amountWon       String
+  transactionHash String?
+
+  createdAt       DateTime @default(now())
+
+  @@unique([raffleId, userAddress])
+  @@map("winners")
+}

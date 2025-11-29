@@ -1,19 +1,56 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import NumberGrid from '@/components/NumberGrid';
 import CheckoutModal from '@/components/CheckoutModal';
-import { MOCK_RAFFLES } from '@/utils/constants';
+import { getRaffleById } from '@/lib/prismaFunctions';
+
+interface Raffle {
+  id: number;
+  title: string;
+  description: string;
+  expectedWinners: number;
+  winningPrice: string;
+  blockchainId: number;
+  ticketPrice: string;
+  startNo: number;
+  endNo: number;
+  startDate: Date;
+  endDate: Date;
+  status: string;
+  takenNos: string | null;
+  chosenData: string | null;
+}
 
 export default function RafflePage() {
   const params = useParams();
   const router = useRouter();
-  const raffleId = params.id as string;
+  const raffleId = parseInt(params.id as string);
 
-  const raffle = MOCK_RAFFLES.find((r) => r.id === raffleId);
+  const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRaffle = async () => {
+      try {
+        const data = await getRaffleById(raffleId);
+        setRaffle(data);
+      } catch (error) {
+        console.error('Error fetching raffle:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRaffle();
+  }, [raffleId]);
+
+  if (loading) {
+    return <div className="text-center py-12">Loading...</div>;
+  }
 
   if (!raffle) {
     return (
@@ -29,7 +66,11 @@ export default function RafflePage() {
     );
   }
 
-  const totalCost = selectedNumbers.length * raffle.ticketPrice;
+  const numberRange = raffle.endNo - raffle.startNo + 1;
+
+  const takenNumbers = raffle.takenNos ? JSON.parse(raffle.takenNos) : [];
+  const totalCost = selectedNumbers.length * parseInt(raffle.ticketPrice);
+  const availableCount = (numberRange - takenNumbers.length);
 
   const handleSelectNumber = (num: number) => {
     setSelectedNumbers((prev) =>
@@ -50,17 +91,25 @@ export default function RafflePage() {
           ← Back to Raffles
         </button>
 
-        <h1 className="text-4xl md:text-5xl font-bold mb-2">{raffle.name}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold mb-2">{raffle.title}</h1>
         <p className="text-gray-300 text-lg">{raffle.description}</p>
       </div>
 
       {/* Info Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
         <div className="border border-amber-400 border-opacity-30 p-6 rounded
           hover:border-opacity-60 transition-all duration-300"
         >
-          <p className="text-gray-400 text-sm mb-2">Prize Pool</p>
-          <p className="text-2xl font-bold text-amber-400">{raffle.expectedWinners}</p>
+          <p className="text-gray-400 text-sm mb-2">Prize</p>
+          <p className="text-2xl font-bold text-teal-400">{raffle.winningPrice} cUSD</p>
+        </div>
+        <div className="border border-amber-400 border-opacity-30 p-6 rounded
+          hover:border-opacity-60 transition-all duration-300"
+        >
+          <p className="text-gray-400 text-sm mb-2">Expected winners</p>
+          <p className="text-2xl font-bold text-amber-400">
+            {raffle.expectedWinners}
+          </p>
         </div>
         <div className="border border-amber-400 border-opacity-30 p-6 rounded
           hover:border-opacity-60 transition-all duration-300"
@@ -71,15 +120,10 @@ export default function RafflePage() {
         <div className="border border-amber-400 border-opacity-30 p-6 rounded
           hover:border-opacity-60 transition-all duration-300"
         >
-          <p className="text-gray-400 text-sm mb-2">Total Entries</p>
-          <p className="text-2xl font-bold text-amber-400">{raffle.entries}</p>
+          <p className="text-gray-400 text-sm mb-2">Available Entries</p>
+          <p className="text-2xl font-bold text-amber-400">{availableCount}</p>
         </div>
-        <div className="border border-amber-400 border-opacity-30 p-6 rounded
-          hover:border-opacity-60 transition-all duration-300"
-        >
-          <p className="text-gray-400 text-sm mb-2">Range</p>
-          <p className="text-2xl font-bold text-amber-400">1-{raffle.numberRange}</p>
-        </div>
+      
       </div>
 
       {/* Number Selection */}
@@ -97,9 +141,10 @@ export default function RafflePage() {
         </div>
 
         <NumberGrid
-          numberRange={raffle.numberRange}
+          fromRange={raffle.startNo}
+          toRange={raffle.endNo}
           selectedNumbers={selectedNumbers}
-          takenNumbers={raffle.takenNumbers}
+          takenNumbers={takenNumbers}
           onSelectNumber={handleSelectNumber}
         />
       </div>
@@ -146,7 +191,7 @@ export default function RafflePage() {
               text-lg font-bold text-amber-400"
             >
               <span>Total:</span>
-              <span>{totalCost} cUSD</span>
+              <span>{Number(selectedNumbers.length * Number(raffle.ticketPrice)).toFixed(3)} cUSD</span>
             </div>
           </div>
 
@@ -162,14 +207,15 @@ export default function RafflePage() {
         </div>
       </div>
 
-      {/* Checkout Modal */}
       {showCheckout && (
         <CheckoutModal
           selectedNumbers={selectedNumbers}
-          totalCost={totalCost}
-          ticketPrice={raffle.ticketPrice}
+          totalCost={(Number(selectedNumbers.length * Number(raffle.ticketPrice)))}
+          ticketPrice={Number(raffle.ticketPrice)}
+          raffleBlockchainId={raffle.blockchainId}
+          raffleId={raffle.id}
           onClose={() => setShowCheckout(false)}
-          raffleName={raffle.name}
+          raffleName={raffle.title}
         />
       )}
     </div>

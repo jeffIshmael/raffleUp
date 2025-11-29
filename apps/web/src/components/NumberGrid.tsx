@@ -3,28 +3,37 @@
 import React, { useState } from 'react';
 
 interface NumberGridProps {
-  numberRange: number;
+  fromRange: number;
+  toRange: number;
   selectedNumbers: number[];
   takenNumbers: number[];
   onSelectNumber: (num: number) => void;
 }
 
 export default function NumberGrid({
-  numberRange,
+  fromRange,
+  toRange,
   selectedNumbers,
   takenNumbers,
   onSelectNumber,
 }: NumberGridProps) {
   const [hoveredNumber, setHoveredNumber] = useState<number | null>(null);
 
-  // Generate array of numbers
-  const numbers = Array.from({ length: numberRange }, (_, i) => i + 1);
+  // Calculate number range
+  const numberRange = toRange - fromRange + 1;
+
+  // Generate array of numbers from fromRange to toRange
+  const numbers = Array.from(
+    { length: numberRange },
+    (_, i) => fromRange + i
+  );
 
   // Determine grid columns based on range
   const getGridCols = () => {
     if (numberRange <= 20) return 'grid-cols-5';
     if (numberRange <= 50) return 'grid-cols-8';
-    return 'grid-cols-10';
+    if (numberRange <= 100) return 'grid-cols-10';
+    return 'grid-cols-12';
   };
 
   // Get state for a number
@@ -34,11 +43,17 @@ export default function NumberGrid({
     return 'available';
   };
 
+  const availableCount = (numberRange - takenNumbers.length);
+
   return (
     <div className="w-full">
       {/* Info Bar */}
-      <div className="mb-8 flex items-center justify-between bg-black bg-opacity-50 border border-amber-400 border-opacity-20 rounded p-4">
+      <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between bg-black bg-opacity-50 border border-amber-400 border-opacity-20 rounded p-4 gap-4">
         <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-gradient-to-br from-gray-800 to-black border-2 border-amber-400 border-opacity-40 text-amber-400 hover:border-amber-400 hover:border-opacity-100 hover:shadow-lg hover:shadow-amber-400/30 rounded"></div>
+            <span className="text-sm text-gray-300">Available</span>
+          </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-amber-400 border-2 border-amber-300 rounded"></div>
             <span className="text-sm text-gray-300">Selected</span>
@@ -48,13 +63,24 @@ export default function NumberGrid({
             <span className="text-sm text-gray-400">Taken</span>
           </div>
         </div>
-        <div className="text-sm text-amber-400 font-semibold">
-          {selectedNumbers.length} of {numberRange - takenNumbers.length}  Selected
+        <div className="text-sm text-amber-400 font-semibold whitespace-nowrap">
+          {selectedNumbers.length} selected • {availableCount} available
         </div>
       </div>
 
+      {/* Range Display */}
+      <div className="mb-6 text-center">
+        <p className="text-gray-400 text-sm mb-2">Select numbers from</p>
+        <p className="text-2xl font-bold text-amber-400">
+          {fromRange} - {toRange}
+        </p>
+        <p className="text-xs text-gray-500 mt-2">
+          {numberRange} total numbers available
+        </p>
+      </div>
+
       {/* Number Grid */}
-      <div className={`grid ${getGridCols()} gap-3 p-6 bg-black bg-opacity-30 border-2 border-amber-400 border-opacity-20 rounded-lg`}>
+      <div className={`grid ${getGridCols()} gap-2 md:gap-3 p-4 md:p-6 bg-black bg-opacity-30 border-2 border-amber-400 border-opacity-20 rounded-lg`}>
         {numbers.map((num) => {
           const state = getNumberState(num);
           const isSelected = state === 'selected';
@@ -73,17 +99,24 @@ export default function NumberGrid({
               onMouseLeave={() => setHoveredNumber(null)}
               disabled={isTaken}
               className={`
-                relative w-full aspect-square rounded-lg font-bold text-lg
+                relative w-full aspect-square rounded-lg font-bold text-sm md:text-lg
                 transition-all duration-200 transform
                 ${
                   isTaken
-                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
+                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600 opacity-60'
                     : isSelected
                     ? 'bg-amber-400 text-black border-2 border-amber-300 shadow-lg shadow-amber-400/50 scale-105 hover:scale-110'
                     : 'bg-gradient-to-br from-gray-800 to-black border-2 border-amber-400 border-opacity-40 text-amber-400 hover:border-amber-400 hover:border-opacity-100 hover:shadow-lg hover:shadow-amber-400/30'
                 }
                 ${isHovered && !isTaken ? 'scale-110' : ''}
               `}
+              title={
+                isTaken
+                  ? `Number ${num} taken`
+                  : isSelected
+                  ? `Number ${num} selected`
+                  : `Select number ${num}`
+              }
             >
               {/* Glow effect for selected/hovered */}
               {(isSelected || isHovered) && !isTaken && (
@@ -101,7 +134,7 @@ export default function NumberGrid({
               {/* Selection indicator */}
               {isSelected && (
                 <div className="absolute inset-0 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">✓</span>
+                  <span className="text-xl md:text-2xl">✓</span>
                 </div>
               )}
             </button>
@@ -112,10 +145,11 @@ export default function NumberGrid({
       {/* Tips Section */}
       <div className="mt-8 p-4 bg-amber-400 bg-opacity-5 border border-amber-400 border-opacity-20 rounded text-sm text-gray-300">
         <p>
-          💡 <strong>Tip:</strong> Click on available numbers to select them. You can choose as many as you want!
-          Gray numbers are already taken by other players.
+          💡 <strong>Tip:</strong> Click on available numbers (blue outline) to select them.
+          You can choose as many numbers as you want. Gray numbers are already taken by other players.
         </p>
       </div>
+
 
       <style jsx>{`
         @keyframes glow-pulse {
