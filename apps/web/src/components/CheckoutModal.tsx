@@ -11,6 +11,7 @@ import {
 } from "@/Constants/constants";
 import { erc20Abi, parseEther } from "viem";
 import { buyRaffleTicket } from "@/lib/prismaFunctions";
+import { useRouter } from "next/navigation";
 
 interface CheckoutModalProps {
   selectedNumbers: number[];
@@ -38,6 +39,7 @@ export default function CheckoutModal({
   const [sendTxHash, setSendTxHash] = useState("");
   const { address, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const router = useRouter();
   const explorerUrl = `https://sepolia.celoscan.io/tx/${sendTxHash}`;
 
   // function to buy tickets
@@ -52,6 +54,8 @@ export default function CheckoutModal({
 
       const totalAmountWei = parseEther(totalCost.toString());
       const bcNumbers = selectedNumbers as unknown as BigInt[];
+
+      console.log("The params:", totalAmountWei, bcNumbers);
 
       // approve
       const approveTx = await writeContractAsync({
@@ -276,7 +280,7 @@ export default function CheckoutModal({
 
             {step === "success" && (
               <button
-                onClick={onClose}
+                onClick={() => router.push("/my-tickets")}
                 className="w-full px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-500 transition-all duration-300"
               >
                 Close
