@@ -35,13 +35,10 @@ export default function CheckoutModal({
 }: CheckoutModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [step, setStep] = useState<"review" | "confirm" | "success">("review");
-  const txHash = useMemo(
-    () => `0x${Math.random().toString(16).slice(2, 10)}`,
-    []
-  );
+  const [sendTxHash, setSendTxHash] = useState("");
   const { address, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const explorerUrl = `https://celoscan.io/tx/${txHash}`;
+  const explorerUrl = `https://sepolia.celoscan.io/tx/${sendTxHash}`;
 
   // function to buy tickets
   const handleConfirm = async () => {
@@ -56,7 +53,7 @@ export default function CheckoutModal({
       const totalAmountWei = parseEther(totalCost.toString());
       const bcNumbers = selectedNumbers as unknown as BigInt[];
 
-      // approve function
+      // approve
       const approveTx = await writeContractAsync({
         address: cUSDAddress,
         abi: erc20Abi,
@@ -64,13 +61,13 @@ export default function CheckoutModal({
         args: [raffleUpAddress, totalAmountWei],
       });
 
-
       if (!approveTx) {
         toast.error("Unable to approve tx. please try again");
+        setIsProcessing(false);
         return;
       }
 
-      // the function now
+      // join raffle
       const txHash = await writeContractAsync({
         address: raffleUpAddress,
         abi: raffleUpAbi,
@@ -80,29 +77,34 @@ export default function CheckoutModal({
 
       if (!txHash) {
         toast.error("Unable to join raffle.");
+        setIsProcessing(false);
         return;
       }
+      setSendTxHash(txHash);
 
-      // prepare database params
+      // DB save
       const buyParams = {
         address: address as string,
         selectedNos: selectedNumbers,
-        raffleId: raffleId,
+        raffleId,
       };
+
       const result = await buyRaffleTicket(buyParams);
 
       if (!result) {
         toast.error("Unable to save to db");
+        setIsProcessing(false);
         return;
       }
 
+      // SUCCESS 🎉
       setStep("success");
       setIsProcessing(false);
     } catch (error) {
       console.log("buying raffle error", error);
-    } finally {
+      toast.error("Transaction cancelled or failed.");
+      setStep("review"); // Reset only if failed
       setIsProcessing(false);
-      setStep("review");
     }
   };
 
