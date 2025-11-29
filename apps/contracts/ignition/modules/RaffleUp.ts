@@ -14,7 +14,7 @@ const RaffleUpModule = buildModule("RaffleUpModule", (m) => {
 
   const agent = m.getParameter(
     "agent",
-    "0x4821ced48fb4456055c86e42587f61c1f39c6315" // change before deploy!
+    "0x1C059486B99d6A2D9372827b70084fbfD014E978" 
   );
 
   const raffleUp = m.contract("RaffleUp", [cUSD, agent]);

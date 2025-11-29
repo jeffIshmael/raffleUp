@@ -114,6 +114,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.0.0
         version: 5.90.11(react@18.3.1)
+      '@wagmi/core':
+        specifier: ^3.0.0
+        version: 3.0.0(@types/react@18.3.27)(react@18.3.1)(typescript@5.9.3)(viem@2.40.3)
       class-variance-authority:
         specifier: ^0.7.0
         version: 0.7.1
@@ -4148,6 +4151,30 @@ packages:
     peerDependencies:
       '@tanstack/query-core': '>=5.0.0'
       typescript: '>=5.0.4'
+      viem: 2.x
+    peerDependenciesMeta:
+      '@tanstack/query-core':
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
+      eventemitter3: 5.0.1
+      mipd: 0.0.7(typescript@5.9.3)
+      typescript: 5.9.3
+      viem: 2.40.3(typescript@5.9.3)
+      zustand: 5.0.0(@types/react@18.3.27)(react@18.3.1)(use-sync-external-store@1.4.0)
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+      - react
+      - use-sync-external-store
+    dev: false
+
+  /@wagmi/core@3.0.0(@types/react@18.3.27)(react@18.3.1)(typescript@5.9.3)(viem@2.40.3):
+    resolution: {integrity: sha512-wOn8jwB9GNYTdrc4CP/huf1aAhDoQ5GKl5OhxGBZx9X4qE+wReW05dTcurEc+XBl9B/ZVis2JdXVU3ZiYqyS8Q==}
+    peerDependencies:
+      '@tanstack/query-core': '>=5.0.0'
+      typescript: '>=5.7.3'
       viem: 2.x
     peerDependenciesMeta:
       '@tanstack/query-core':

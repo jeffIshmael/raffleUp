@@ -29,7 +29,6 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
         uint256 id;
         uint256 startNumber;
         uint256 endNumber;
-        uint256 startTime;
         uint256 endTime;
         uint256 entryPrice;
         uint256 totalCollected;
@@ -44,7 +43,7 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
     mapping(uint256 => mapping(uint256 => bool)) public numberTaken;
     mapping(uint256 => uint256[]) public purchasedNumbers;
 
-    event RaffleCreated(uint256 raffleId, uint256 startNum, uint256 endNum, uint256 entryPrice, uint256 start, uint256 end);
+    event RaffleCreated(uint256 raffleId, uint256 startNum, uint256 endNum, uint256 entryPrice, uint256 end);
     event NumberPurchased(uint256 raffleId, uint256 number, address buyer);
     event RaffleClosed(uint256 raffleId, address[] winners, uint256 totalDistributable);
     event RaffleRefunded(uint256 raffleId);
@@ -78,11 +77,9 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
         uint256 startNumber,
         uint256 endNumber,
         uint256 entryPrice,
-        uint256 startTime,
         uint256 endTime
     ) external onlyOwner whenNotPaused returns (uint256) {
         require(endNumber >= startNumber, "invalid range");
-        require(endTime > startTime, "invalid times");
         require(endTime > block.timestamp, "must be future");
         require(entryPrice > 0, "price > 0");
 
@@ -91,11 +88,10 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
         r.id = raffleCount;
         r.startNumber = startNumber;
         r.endNumber = endNumber;
-        r.startTime = startTime;
         r.endTime = endTime;
         r.entryPrice = entryPrice;
 
-        emit RaffleCreated(raffleCount, startNumber, endNumber, entryPrice, startTime, endTime);
+        emit RaffleCreated(raffleCount, startNumber, endNumber, entryPrice, endTime);
         return raffleCount;
     }
 
@@ -109,7 +105,6 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
         require(r.id != 0, "not-exist");
         require(!r.closed, "closed");
         require(!r.paused, "paused");
-        require(block.timestamp >= r.startTime, "not-started");
         require(block.timestamp < r.endTime, "ended");
 
         uint256 totalCost = r.entryPrice * numbers.length;
