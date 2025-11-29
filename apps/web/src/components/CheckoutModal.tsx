@@ -10,7 +10,6 @@ import {
   raffleUpAddress,
 } from "@/Constants/constants";
 import { erc20Abi, parseEther } from "viem";
-import { wagmiConfig } from "./wallet-provider";
 import { buyRaffleTicket } from "@/lib/prismaFunctions";
 
 interface CheckoutModalProps {
@@ -65,11 +64,8 @@ export default function CheckoutModal({
         args: [raffleUpAddress, totalAmountWei],
       });
 
-      const transactionReceipt = waitForTransactionReceipt(wagmiConfig, {
-        hash: approveTx,
-      });
 
-      if (!transactionReceipt) {
+      if (!approveTx) {
         toast.error("Unable to approve tx. please try again");
         return;
       }
