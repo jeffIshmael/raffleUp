@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/lib/generated/prisma"
+}
+
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  address String @unique
+  raffleIds String? // array of raffleIds and numbers chosen a user has purchased
+
+}
+
+model Raffle {
+  id    Int     @id @default(autoincrement())
+  title String
+  description String
+  expectedWinners Int
+  winningPrice String
+  blockchainId Int
+  ticketPrice String
+  startNo Int
+  endNo Int
+  startDate DateTime
+  endDate DateTime
+  status String
+  takenNos String? //json string array of numbers
+  chosenData String? // json string showing an object of user and selected numbers
+}
+

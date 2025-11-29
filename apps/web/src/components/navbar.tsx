@@ -71,7 +71,7 @@ export default function Navbar() {
               <Link href="/winners" className={navLinkClasses("/winners")}>
                 Past Draws
               </Link>
-              <Link href="/profile" className={navLinkClasses("/profile")}>
+              <Link href="/my-tickets" className={navLinkClasses("/my-tickets")}>
                 My Tickets
               </Link>
               <Link href="/profile" className={navLinkClasses("/profile")}>

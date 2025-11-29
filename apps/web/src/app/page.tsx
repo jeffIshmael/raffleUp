@@ -1,44 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import RaffleCard from "../components/RaffleCard";
-// import Timer from '@/components/Timer';
-import { MOCK_RAFFLES } from "../utils/constants";
-import { useWriteContract, useAccount } from "wagmi";
+import RaffleCard from "@/components/RaffleCard";
+import RaffleCardSkeleton from "@/components/RaffleCardSkeleton";
+import ErrorState from "@/components/ErrorState";
+import EmptyState from "@/components/EmptyState";
+import { getRaffles } from "@/lib/prismaFunctions";
+import type { Raffle } from "@/types/raffle";
 
-export default function HomePage() {
+type PageState = "loading" | "empty" | "error" | "success";
+
+export default function Home() {
   const router = useRouter();
-  const {writeContractAsync} = useWriteContract();
-  const {isConnected, address} = useAccount();
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [pageState, setPageState] = useState<PageState>("loading");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // const sendcUSD = async() =>{
-  //   try {
-  //     if(!address){
-  //       console.error("not connected");
-  //       return;
-  //     }
+  useEffect(() => {
+    const fetchRaffles = async () => {
+      try {
+        setPageState("loading");
+        console.log("🔍 Fetching raffles...");
+        const data = await getRaffles();
+        console.log("✅ Data received:", data);
 
-  //     const amount = parseEther("0.1");
-  //     const usedAddress = "0xE645d2C1C3d665Ac84BFDe272DaE11c81bA0dbF6" as `0x${string}`
-  //     console.log("sending...")
+        if (!data || data.length === 0) {
+          console.log("⚠️ No data returned");
+          setPageState("empty");
+          setRaffles([]);
+        } else {
+          console.log("🎉 Setting raffles:", data);
+          setPageState("success");
+          setRaffles(data as Raffle[]);
+        }
+      } catch (error) {
+        console.error("❌ Error:", error);
+        setPageState("error");
+        setErrorMessage(
+          error instanceof Error ? error.message : "Failed to load raffles"
+        );
+      }
+    };
 
-  //     const hash = await writeContractAsync({
-  //       address: cUSDAddress,
-  //       abi: erc20Abi,
-  //       functionName: "transfer",
-  //       args:["0xE645d2C1C3d665Ac84BFDe272DaE11c81bA0dbF6", amount]
-  //     })
+    fetchRaffles();
+  }, []);
 
-  //     if(!hash){
-  //       console.error("error done.")
-  //     }
-      
-  //   } catch (error) {
-  //     console.error(error);
-      
-  //   }
-  // }
+  const handleRetry = () => {
+    window.location.reload();
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
@@ -65,21 +75,41 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Active Raffles */}
+      {/* Active Raffles Section */}
       <section>
         <h2 className="text-3xl font-bold mb-8 text-amber-400 tracking-wide">
           🎰 Live Raffles
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {MOCK_RAFFLES.map((raffle) => (
-            <RaffleCard
-              key={raffle.id}
-              raffle={raffle}
-              onClick={() => router.push(`/raffle/${raffle.id}`)}
-            />
-          ))}
-        </div>
+        {/* LOADING STATE */}
+        {pageState === "loading" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <RaffleCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* SUCCESS STATE */}
+        {pageState === "success" && raffles.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {raffles.map((raffle) => (
+              <RaffleCard
+                key={raffle.id}
+                raffle={raffle}
+                onClick={() => router.push(`/raffle/${raffle.id}`)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* EMPTY STATE */}
+        {pageState === "empty" && <EmptyState />}
+
+        {/* ERROR STATE */}
+        {pageState === "error" && (
+          <ErrorState message={errorMessage} onRetry={handleRetry} />
+        )}
       </section>
 
       {/* Footer Section */}
