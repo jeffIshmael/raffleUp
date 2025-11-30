@@ -84,7 +84,7 @@ export default function CheckoutModal({
         address: raffleUpAddress,
         abi: raffleUpAbi,
         functionName: "joinRaffle",
-        args: [BigInt(raffleBlockchainId), [bcNumbers]],
+        args: [BigInt(raffleBlockchainId), bcNumbers],
       });
 
       const transaction = await publicClient.waitForTransactionReceipt({
