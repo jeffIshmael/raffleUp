@@ -1,7 +1,8 @@
-export const raffleUpAddress = "0xb7DB97d8A50dCA6Be28AFcB7AB89cb86BCB2FBA0";
+export const raffleUpAddress = "0xD9d820b3aBEaf6764Cb8C0dDb4Eb403623Dd931F";
+// 0xb7DB97d8A50dCA6Be28AFcB7AB89cb86BCB2FBA0
 export const cUSDAddress = "0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b"; // celo-sepolia
 
-export const raffleUpAbi = [
+export const raffleUpAbi =[
   {
     "inputs": [
       {
@@ -164,6 +165,12 @@ export const raffleUpAbi = [
         "internalType": "address[]",
         "name": "winners",
         "type": "address[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "winningNumbers",
+        "type": "uint256[]"
       },
       {
         "indexed": false,
@@ -369,6 +376,30 @@ export const raffleUpAbi = [
         "internalType": "uint256",
         "name": "raffleId",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "didUserWin",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "raffleId",
+        "type": "uint256"
       }
     ],
     "name": "getPurchasedNumbers",
@@ -396,6 +427,109 @@ export const raffleUpAbi = [
         "internalType": "address[]",
         "name": "",
         "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "raffleId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getUserSelectedNumbers",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "raffleId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getUserWinningNumbers",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "raffleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWinnersWithNumbers",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "winnerAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "winningNumbers",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountWon",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct RaffleUp.WinnerInfo[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "raffleId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getWinningNumbers",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
@@ -697,6 +831,35 @@ export const raffleUpAbi = [
     "name": "unpauseRaffle",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "userSelectedNumbers",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

@@ -3,13 +3,8 @@ pragma solidity ^0.8.28;
 
 /**
  * @title RaffleUp - Simple number-based raffle dApp on Celo using cUSD.
- * @author 
+ * @author Jeff Muchiri
  *
- * - Owner creates raffles.
- * - Users pick numbers & pay entryPrice in cUSD.
- * - Agent closes raffles, selects winners, distributes equal payouts.
- * - Refund only when entries == 1.
- * - Platform fee = 1% of totalCollected.
  */
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -23,7 +18,7 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
 
     uint256 public constant FEE_BASIS_POINTS = 100; // 1%
     uint256 public raffleCount;
-    uint256 public accumulatedFees; // stores only platform fees
+    uint256 public accumulatedFees;
 
     struct Raffle {
         uint256 id;
@@ -36,16 +31,25 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
         bool closed;
         bool paused;
         address[] winners;
+        uint256[] winningNumbers;
+    }
+
+    struct WinnerInfo {
+        address winnerAddress;
+        uint256[] winningNumbers;
+        uint256 amountWon;
     }
 
     mapping(uint256 => Raffle) public raffles;
     mapping(uint256 => mapping(uint256 => address)) public numberOwner;
     mapping(uint256 => mapping(uint256 => bool)) public numberTaken;
     mapping(uint256 => uint256[]) public purchasedNumbers;
-
+    
+ 
+    mapping(uint256 => mapping(address => uint256[])) public userSelectedNumbers;
     event RaffleCreated(uint256 raffleId, uint256 startNum, uint256 endNum, uint256 entryPrice, uint256 end);
     event NumberPurchased(uint256 raffleId, uint256 number, address buyer);
-    event RaffleClosed(uint256 raffleId, address[] winners, uint256 totalDistributable);
+    event RaffleClosed(uint256 raffleId, address[] winners, uint256[] winningNumbers, uint256 totalDistributable);
     event RaffleRefunded(uint256 raffleId);
     event AgentChanged(address oldAgent, address newAgent);
     event PlatformFeesWithdrawn(address to, uint256 amount);
@@ -118,6 +122,8 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
             numberTaken[raffleId][num] = true;
             numberOwner[raffleId][num] = msg.sender;
             purchasedNumbers[raffleId].push(num);
+            
+            userSelectedNumbers[raffleId][msg.sender].push(num);
 
             emit NumberPurchased(raffleId, num, msg.sender);
         }
@@ -127,7 +133,7 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
     }
 
     // ---------------------------------------------------------
-    // CLOSE RAFFLE (DETERMINE WINNERS + PAYOUT)
+    // CLOSE RAFFLE
     // ---------------------------------------------------------
     function closeRaffle(uint256 raffleId) external onlyAgent nonReentrant whenNotPaused {
         Raffle storage r = raffles[raffleId];
@@ -136,21 +142,15 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
 
         uint256 entries = r.totalEntries;
 
-        // --- REFUND CONDITION ---
         if (entries == 1) revert("use refundRaffle() for 1 entry only");
-
         require(entries >= 2, "no participants");
 
-        // winnersCount rule: 1 per 10 entries
         uint256 winnersCount = entries / 10;
-
-        // If entries >= 2 but winnersCount == 0, force 1 winner
         if (winnersCount == 0) winnersCount = 1;
 
         uint256[] storage pool = purchasedNumbers[raffleId];
         require(pool.length == entries, "pool mismatch");
 
-        // calculate platform fee
         uint256 fee = (r.totalCollected * FEE_BASIS_POINTS) / 10000;
         accumulatedFees += fee;
 
@@ -158,6 +158,7 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
         uint256 equalShare = distributable / winnersCount;
 
         address[] memory winners = new address[](winnersCount);
+        uint256[] memory winningNums = new uint256[](winnersCount); 
 
         bool[] memory usedIndex = new bool[](pool.length);
         uint256 chosen = 0;
@@ -165,7 +166,7 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
 
         while (chosen < winnersCount) {
             uint256 randIdx = uint256(
-                keccak256(abi.encodePacked(block.timestamp,block.prevrandao,msg.sender,nonce,raffleId))
+                keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender, nonce, raffleId))
             ) % pool.length;
 
             if (usedIndex[randIdx]) {
@@ -184,7 +185,10 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
             }
 
             winners[chosen] = winnerAddr;
+            winningNums[chosen] = winningNumber; 
+            
             r.winners.push(winnerAddr);
+            r.winningNumbers.push(winningNumber);
 
             require(cUSD.transfer(winnerAddr, equalShare), "pay-failed");
 
@@ -194,7 +198,7 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
 
         r.closed = true;
 
-        emit RaffleClosed(raffleId, winners, distributable);
+        emit RaffleClosed(raffleId, winners, winningNums, distributable);
     }
 
     // ---------------------------------------------------------
@@ -212,7 +216,6 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
 
         require(cUSD.transfer(participant, r.entryPrice), "refund-failed");
 
-        // cleanup
         numberOwner[raffleId][number] = address(0);
         numberTaken[raffleId][number] = false;
         delete purchasedNumbers[raffleId];
@@ -236,20 +239,152 @@ contract RaffleUp is Ownable, ReentrancyGuard, Pausable {
     }
 
     // ---------------------------------------------------------
-    // WITHDRAW ONLY PLATFORM FEES
+    // WITHDRAW PLATFORM FEES
     // ---------------------------------------------------------
     function withdrawPlatformFees(address to) external onlyOwner nonReentrant {
         require(to != address(0), "invalid address");
         uint256 amount = accumulatedFees;
         require(amount > 0, "no fees");
 
-        accumulatedFees = 0; // reset
+        accumulatedFees = 0;
         require(cUSD.transfer(to, amount), "withdraw-failed");
 
         emit PlatformFeesWithdrawn(to, amount);
     }
 
-    // -------------------- VIEW HELPERS -----------------------
+    // ========================================================================
+    // VIEW FUNCTIONS
+    // ========================================================================
+
+    /**
+     * @notice Get user's selected numbers for a raffle
+     * @param raffleId The raffle ID
+     * @param user The user address
+     * @return Array of numbers the user selected
+     */
+    function getUserSelectedNumbers(uint256 raffleId, address user) 
+        external 
+        view 
+        returns (uint256[] memory) 
+    {
+        return userSelectedNumbers[raffleId][user];
+    }
+
+    /**
+     * @notice Get winning numbers for a raffle
+     * @param raffleId The raffle ID
+     * @return Array of winning numbers
+     */
+    function getWinningNumbers(uint256 raffleId) 
+        external 
+        view 
+        returns (uint256[] memory) 
+    {
+        return raffles[raffleId].winningNumbers;
+    }
+
+    /**
+     * @notice Get complete winner information with their winning numbers
+     * @param raffleId The raffle ID
+     * @return Array of WinnerInfo structs containing address, numbers, and amount won
+     */
+    function getWinnersWithNumbers(uint256 raffleId) 
+        external 
+        view 
+        returns (WinnerInfo[] memory) 
+    {
+        Raffle storage r = raffles[raffleId];
+        require(r.closed, "raffle not closed");
+        
+        uint256[] memory winningNums = r.winningNumbers;
+        address[] memory winners = r.winners;
+        
+        // Calculate equal share
+        uint256 fee = (r.totalCollected * FEE_BASIS_POINTS) / 10000;
+        uint256 distributable = r.totalCollected - fee;
+        uint256 equalShare = winners.length > 0 ? distributable / winners.length : 0;
+        
+        // Group winners by address to handle multiple wins
+        WinnerInfo[] memory result = new WinnerInfo[](winners.length);
+        uint256 resultCount = 0;
+        
+        // Simple approach: return one entry per winning number
+        // (Frontend can group by address if needed)
+        for (uint256 i = 0; i < winners.length; i++) {
+            uint256[] memory nums = new uint256[](1);
+            nums[0] = winningNums[i];
+            
+            result[resultCount] = WinnerInfo({
+                winnerAddress: winners[i],
+                winningNumbers: nums,
+                amountWon: equalShare
+            });
+            resultCount++;
+        }
+        
+        return result;
+    }
+
+    /**
+     * @notice Check if a user won a specific raffle
+     * @param raffleId The raffle ID
+     * @param user The user address
+     * @return True if user won, false otherwise
+     */
+    function didUserWin(uint256 raffleId, address user) 
+        external 
+        view 
+        returns (bool) 
+    {
+        address[] memory winners = raffles[raffleId].winners;
+        for (uint256 i = 0; i < winners.length; i++) {
+            if (winners[i] == user) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @notice Get user's winning numbers (if they won)
+     * @param raffleId The raffle ID
+     * @param user The user address
+     * @return Array of winning numbers for this user
+     */
+    function getUserWinningNumbers(uint256 raffleId, address user) 
+        external 
+        view 
+        returns (uint256[] memory) 
+    {
+        Raffle storage r = raffles[raffleId];
+        require(r.closed, "raffle not closed");
+        
+        // Count how many times user won
+        uint256 winCount = 0;
+        for (uint256 i = 0; i < r.winners.length; i++) {
+            if (r.winners[i] == user) {
+                winCount++;
+            }
+        }
+        
+        if (winCount == 0) {
+            return new uint256[](0);
+        }
+        
+        // Collect winning numbers
+        uint256[] memory userWinningNums = new uint256[](winCount);
+        uint256 index = 0;
+        
+        for (uint256 i = 0; i < r.winners.length; i++) {
+            if (r.winners[i] == user) {
+                userWinningNums[index] = r.winningNumbers[i];
+                index++;
+            }
+        }
+        
+        return userWinningNums;
+    }
+
     function getPurchasedNumbers(uint256 raffleId) external view returns (uint256[] memory) {
         return purchasedNumbers[raffleId];
     }

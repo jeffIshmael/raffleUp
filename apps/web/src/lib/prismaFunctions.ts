@@ -1,6 +1,7 @@
 "use server";
 import prisma from "@/lib/prisma";
 import { Ticket } from "@/types/raffle";
+import type { Raffle as raffleType } from "@/types/raffle";
 
 interface Raffle {
   title: string;
@@ -82,7 +83,8 @@ export async function createRaffle(params: Raffle) {
   }
 }
 
-//   GET RAFFLE BY ID
+//  GET RAFFLE BY ID
+
 export async function getRaffleById(raffleId: number) {
   try {
     return await prisma.raffle.findUnique({ where: { id: raffleId } });
@@ -113,13 +115,19 @@ export async function buyRaffleTicket(params: BuyRaffle) {
 
     // --- existing data ---
     const existingTakenNos = raffle.takenNos ? JSON.parse(raffle.takenNos) : [];
-    const existingChosenData = raffle.chosenData ? JSON.parse(raffle.chosenData) : [];
+    const existingChosenData = raffle.chosenData
+      ? JSON.parse(raffle.chosenData)
+      : [];
 
     // merge taken numbers
-    const updatedTakenNos = Array.from(new Set([...existingTakenNos, ...params.selectedNos]));
+    const updatedTakenNos = Array.from(
+      new Set([...existingTakenNos, ...params.selectedNos])
+    );
 
     // merge chosenData
-    const buyerIndex = existingChosenData.findIndex((c: any) => c.buyer === params.address);
+    const buyerIndex = existingChosenData.findIndex(
+      (c: any) => c.buyer === params.address
+    );
 
     if (buyerIndex === -1) {
       // user not present → add new entry
@@ -130,7 +138,9 @@ export async function buyRaffleTicket(params: BuyRaffle) {
     } else {
       // user exists → merge numbers into existing record
       const oldNumbers = existingChosenData[buyerIndex].numbers;
-      const mergedNumbers = Array.from(new Set([...oldNumbers, ...params.selectedNos]));
+      const mergedNumbers = Array.from(
+        new Set([...oldNumbers, ...params.selectedNos])
+      );
       existingChosenData[buyerIndex].numbers = mergedNumbers;
     }
 
@@ -150,7 +160,9 @@ export async function buyRaffleTicket(params: BuyRaffle) {
 
     let raffleTrack = user?.raffleIds ? JSON.parse(user.raffleIds) : [];
 
-    const index = raffleTrack.findIndex((r: any) => r.raffleId === params.raffleId);
+    const index = raffleTrack.findIndex(
+      (r: any) => r.raffleId === params.raffleId
+    );
 
     if (index === -1) {
       // new raffle entry
@@ -221,7 +233,6 @@ export async function buyRaffleTicket(params: BuyRaffle) {
     return null;
   }
 }
-
 
 //   GET USER ACTIVE TICKETS
 export async function getUserActiveTickets(address: string): Promise<Ticket[]> {
@@ -488,13 +499,15 @@ export async function getUserProfileStats(address: string) {
 }
 
 // Record winners in database
-async function recordWinnersInDatabase(
+export async function saveWinnersToDatabase(
   raffleId: number,
-  raffleBlockchainId: number,
-  winners: WinnerData[],
-  transactionHash?: string
+  winners: { address: string; numbers: number[]; amount: string }[],
+  transactionHash: string
 ): Promise<boolean> {
   try {
+    console.log(`Saving ${winners.length} winners to database...`);
+
+    // Verify raffle exists
     const raffle = await prisma.raffle.findUnique({
       where: { id: raffleId },
     });
@@ -504,57 +517,33 @@ async function recordWinnersInDatabase(
       return false;
     }
 
-    // Get chosen data to map winning numbers
-    const chosenData = raffle.chosenData ? JSON.parse(raffle.chosenData) : [];
-
-    // Create winner records
+    // Save each winner
     for (const winner of winners) {
-      // Find which numbers this user chose in this raffle
-      const userChosenData = chosenData.find(
-        (item: any) => item.buyer.toLowerCase() === winner.address.toLowerCase()
-      );
-
-      const winningNumbers = userChosenData?.numbers || [];
-
+      // Create or update winner record
       await prisma.winner.upsert({
         where: {
           raffleId_userAddress: {
             raffleId: raffleId,
-            userAddress: winner.address.toLowerCase(),
+            userAddress: winner.address,
           },
         },
         update: {
+          winningNumbers: JSON.stringify(winner.numbers),
           amountWon: winner.amount,
           transactionHash: transactionHash,
         },
         create: {
           raffleId: raffleId,
-          userAddress: winner.address.toLowerCase(),
-          winningNumbers: JSON.stringify(winningNumbers),
+          userAddress: winner.address,
+          winningNumbers: JSON.stringify(winner.numbers),
           amountWon: winner.amount,
           transactionHash: transactionHash,
         },
       });
 
-      // Update user's raffle status to won
-      const user = await prisma.user.findUnique({
-        where: { address: winner.address.toLowerCase() },
-      });
-
-      if (user && user.raffleIds) {
-        const raffleIds = JSON.parse(user.raffleIds);
-        const updatedRaffleIds = raffleIds.map((item: any) => ({
-          ...item,
-          status: item.raffleId === raffleId ? "won" : item.status,
-        }));
-
-        await prisma.user.update({
-          where: { address: winner.address.toLowerCase() },
-          data: {
-            raffleIds: JSON.stringify(updatedRaffleIds),
-          },
-        });
-      }
+      console.log(
+        `✅ Saved: ${winner.address} won ${winner.numbers.length} number(s)`
+      );
     }
 
     // Update raffle status to closed
@@ -567,7 +556,7 @@ async function recordWinnersInDatabase(
 
     return true;
   } catch (error) {
-    console.error("Error recording winners in database:", error);
+    console.error("Error saving winners to database:", error);
     return false;
   }
 }
@@ -659,32 +648,72 @@ export async function getUserWinnings(userAddress: string) {
 
 // Update user's winning status
 export async function updateUserWinningStatus(
-  userAddress: string,
-  raffleId: number
-) {
+  raffleId: number,
+  winnerAddresses: string[]
+): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({
-      where: { address: userAddress.toLowerCase() },
-    });
+    for (const address of winnerAddresses) {
+      const user = await prisma.user.findUnique({
+        where: { address: address.toLowerCase() },
+      });
 
-    if (!user || !user.raffleIds) return false;
+      if (!user || !user.raffleIds) continue;
 
-    const raffleIds = JSON.parse(user.raffleIds);
-    const updated = raffleIds.map((item: any) => ({
-      ...item,
-      status: item.raffleId === raffleId ? "won" : item.status,
-    }));
+      const raffleIds = JSON.parse(user.raffleIds);
 
-    await prisma.user.update({
-      where: { address: userAddress.toLowerCase() },
-      data: {
-        raffleIds: JSON.stringify(updated),
+      // Update status to 'won' for this raffle
+      const updatedRaffleIds = raffleIds.map((item: any) => ({
+        ...item,
+        status: item.raffleId === raffleId ? "won" : item.status || "active",
+      }));
+
+      await prisma.user.update({
+        where: { address: address.toLowerCase() },
+        data: {
+          raffleIds: JSON.stringify(updatedRaffleIds),
+        },
+      });
+
+      console.log(`✅ Updated user ${address} status to 'won'`);
+    }
+  } catch (error) {
+    console.error("Error updating user winning status:", error);
+  }
+}
+
+// checking the raffles that are past end date
+export async function checkEndDate(): Promise<raffleType[] | null> {
+  try {
+    // get the raffles
+    const raffles = await prisma.raffle.findMany({
+      where: {
+        endDate: {
+          lte: new Date(Date.now()),
+        },
       },
     });
+    if (!raffles) {
+      return null;
+    }
 
-    return true;
+    return raffles;
   } catch (error) {
-    console.log("updateUserWinningStatus error:", error);
-    return false;
+    console.error("Unable to get the raffles.");
+    return null;
+  }
+}
+
+// function to update a refund state to a raffle
+export async function setRefunded(raffleId: number) {
+  try {
+    // Update raffle status to refunded
+    const newRaffle = await prisma.raffle.update({
+      where: { id: raffleId },
+      data: { status: "refunded" },
+    });
+    return newRaffle;
+  } catch (error) {
+    console.log("an error setting refunded to db", error);
+    return null;
   }
 }

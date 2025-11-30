@@ -28,6 +28,6 @@ export default RaffleUpModule;
 
 // pnpm hardhat verify \
   // --network sepolia \
-  // 0xb7DB97d8A50dCA6Be28AFcB7AB89cb86BCB2FBA0 \
+  // "0xb7DB97d8A50dCA6Be28AFcB7AB89cb86BCB2FBA0" \
   // "0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b" \
   // "0x1C059486B99d6A2D9372827b70084fbfD014E978"

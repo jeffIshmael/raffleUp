@@ -3,6 +3,12 @@
 import { agentWalletClient, publicClient, agentAccount } from "./agentClient";
 import { raffleUpAbi, raffleUpAddress } from "@/Constants/constants";
 
+interface WinnerInfo {
+  winnerAddress: string;
+  winningNumbers: bigint[];
+  amountWon: bigint;
+}
+
 // function to get the total numbers of raffle
 export async function totalRaffles(): Promise<number | null> {
   try {
@@ -14,6 +20,70 @@ export async function totalRaffles(): Promise<number | null> {
     return Number(total);
   } catch (error) {
     console.error("error getting total raffles", error);
+    return null;
+  }
+}
+
+// getting winners
+export async function getWinnersFromContract(
+  raffleBlockchainId: number
+): Promise<{ address: string; numbers: number[]; amount: string }[] | null> {
+  try {
+    // Call the new smart contract function that returns everything
+    const winnersData = (await publicClient.readContract({
+      address: raffleUpAddress,
+      abi: raffleUpAbi,
+      functionName: "getWinnersWithNumbers",
+      args: [BigInt(raffleBlockchainId)],
+    })) as WinnerInfo[];
+
+    if (!winnersData || winnersData.length === 0) {
+      console.log("No winners found");
+      return null;
+    }
+
+    // Group by address to handle multiple wins
+    const winnerMap = new Map<
+      string,
+      { numbers: Set<number>; totalAmount: bigint }
+    >();
+
+    for (const winner of winnersData) {
+      const address = winner.winnerAddress.toLowerCase();
+      const amount = BigInt(winner.amountWon);
+
+      if (!winnerMap.has(address)) {
+        winnerMap.set(address, { numbers: new Set(), totalAmount: 0n });
+      }
+
+      const data = winnerMap.get(address)!;
+
+      // Add winning numbers
+      for (const num of winner.winningNumbers) {
+        data.numbers.add(Number(num));
+      }
+
+      // Add to total amount
+      data.totalAmount += amount;
+    }
+
+    // Convert to result array
+    const result = Array.from(winnerMap.entries()).map(([address, data]) => ({
+      address: address,
+      numbers: Array.from(data.numbers).sort((a, b) => a - b),
+      amount: data.totalAmount.toString(),
+    }));
+
+    console.log(`Found ${result.length} unique winners`);
+    result.forEach((w) => {
+      console.log(
+        `   - ${w.address}: numbers [${w.numbers.join(", ")}] = ${w.amount} wei`
+      );
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching winners from contract:", error);
     return null;
   }
 }
@@ -31,7 +101,13 @@ export async function triggerCloseRaffle(
       account: agentAccount,
     });
     const hash = await agentWalletClient.writeContract(request);
-    return hash;
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: hash,
+    });
+    if (receipt.status == "reverted") {
+      return null;
+    }
+    return receipt.transactionHash;
   } catch (error) {
     console.error("Error happened while closing raffle", error);
     return null;
@@ -51,7 +127,13 @@ export async function triggerRefundRaffle(
       account: agentAccount,
     });
     const hash = await agentWalletClient.writeContract(request);
-    return hash;
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: hash,
+    });
+    if (receipt.status == "reverted") {
+      return null;
+    }
+    return receipt.transactionHash;
   } catch (error) {
     console.error("Error happened while closing raffle", error);
     return null;
