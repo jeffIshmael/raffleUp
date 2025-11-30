@@ -14,7 +14,7 @@ function unauthorized() {
   );
 }
 
-export async function handler(req: NextRequest) {
+export async function POST(req: NextRequest) {
   if (!CRON_SECRET) {
     console.error(" Missing CRON_SECRET_KEY in env");
     return unauthorized();
@@ -76,8 +76,5 @@ export async function handler(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  return handler(req);
-}
-export async function POST(req: NextRequest) {
-  return handler(req);
+  return POST(req);
 }

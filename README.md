@@ -24,7 +24,6 @@ All transactions are transparent, immutable, and controlled by audited smart con
 - ✅ **Wallet Connection** - Connect via MetaMask/Celo Wallet
 - ✅ **Number Selection** - Beautiful, interactive bus-seat style grid
 - ✅ **Live Raffles** - Browse and join active raffles
-- ✅ **Real-time Updates** - See taken numbers as others join
 - ✅ **Purchase History** - Track all tickets and outcomes
 - ✅ **Winnings Dashboard** - View past wins and prizes
 - ✅ **Profile Management** - Wallet stats and participation history
@@ -38,9 +37,7 @@ All transactions are transparent, immutable, and controlled by audited smart con
 
 ### 🛡️ Admin Features
 - ✅ **Create Raffles** - Full control over raffle parameters
-- ✅ **Close Raffles** - Trigger winner selection and payouts
 - ✅ **View Analytics** - Track raffle statistics
-- ✅ **Manage Winners** - Record and verify winners
 
 ### 🎨 UI/UX Features
 - ✅ **Casino Aesthetic** - Premium dark theme with gold accents
