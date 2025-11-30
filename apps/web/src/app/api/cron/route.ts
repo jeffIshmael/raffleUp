@@ -1,51 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateApiKey, unauthorizedResponse } from "@/lib/apiAuth";
 import { checkRaffleEndDate } from "@/lib/cronFunctions";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
-function unauthorized() {
-  return NextResponse.json(
-    {
-      success: false,
-      error: "Unauthorized",
-      timestamp: new Date().toISOString(),
-    },
-    { status: 401 }
-  );
-}
 
 async function POST(req: NextRequest) {
-  // 💥 MUST be inside the handler
-  const CRON_SECRET = process.env.CRON_SECRET_KEY;
-  if (!CRON_SECRET) {
-    console.error("Missing CRON_SECRET_KEY in env");
-    return unauthorized();
-  }
-
-  // -------- AUTHENTICATION --------
-  const authHeader = req.headers.get("authorization");
-  const cronHeader = req.headers.get("x-cron-key");
-
-  let isAuthorized = false;
-
-  // Option 1: Bearer token
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.replace("Bearer ", "").trim();
-    if (token === CRON_SECRET) isAuthorized = true;
-  }
-
-  // Option 2: custom header
-  if (cronHeader === CRON_SECRET) {
-    isAuthorized = true;
-  }
-
-  if (!isAuthorized) {
-    console.error("Unauthorized cron access");
-    return unauthorized();
-  }
-
-  // -------- EXECUTION --------
+     // Validate API key
+     if (!validateApiKey(req)) {
+        return unauthorizedResponse();
+      }
   try {
     console.log("Cron executing:", new Date().toISOString());
     await checkRaffleEndDate();
