@@ -11,7 +11,7 @@ import {
   getWinnersFromContract,
 } from "./agentFunctions";
 
-async function closeRaffle(blockchainId: number, raffleId: number) {
+export async function closeRaffle(blockchainId: number, raffleId: number) {
   try {
     const txHash = await triggerCloseRaffle(blockchainId);
     if (!txHash) return console.error("Close raffle failed");
@@ -34,7 +34,7 @@ async function closeRaffle(blockchainId: number, raffleId: number) {
   }
 }
 
-async function refundRaffle(blockchainId: number, raffleId: number) {
+export async function refundRaffle(blockchainId: number, raffleId: number) {
   try {
     const txHash = await triggerRefundRaffle(blockchainId);
     if (!txHash) return console.error(" Refund tx failed");

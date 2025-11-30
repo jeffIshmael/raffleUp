@@ -3,7 +3,7 @@ import { validateApiKey, unauthorizedResponse } from "@/lib/apiAuth";
 import { checkRaffleEndDate } from "@/lib/cronFunctions";
 
 
-async function POST(req: NextRequest) {
+export async function POST(req: NextRequest) {
      // Validate API key
      if (!validateApiKey(req)) {
         return unauthorizedResponse();
