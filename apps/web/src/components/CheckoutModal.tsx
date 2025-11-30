@@ -16,6 +16,7 @@ import {
 import { erc20Abi, parseEther } from "viem";
 import { buyRaffleTicket } from "@/lib/prismaFunctions";
 import { useRouter } from "next/navigation";
+import { publicClient } from "@/lib/viemClient";
 
 interface CheckoutModalProps {
   selectedNumbers: number[];
@@ -42,7 +43,7 @@ export default function CheckoutModal({
   const [step, setStep] = useState<"review" | "confirm" | "success">("review");
   const [sendTxHash, setSendTxHash] = useState("");
   const { address, isConnected } = useAccount();
-  const { data, writeContract, writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
   const router = useRouter();
   const explorerUrl = `https://sepolia.celoscan.io/tx/${sendTxHash}`;
 
@@ -60,7 +61,6 @@ export default function CheckoutModal({
       // Convert selected numbers → bigint[]
       const bcNumbers = selectedNumbers.map((n) => BigInt(n));
 
-
       // approve
       const approveTx = await writeContractAsync({
         address: cUSDAddress,
@@ -69,7 +69,11 @@ export default function CheckoutModal({
         args: [raffleUpAddress, totalAmountWei],
       });
 
-      if (!approveTx) {
+      const approveTransaction = await publicClient.waitForTransactionReceipt({
+        hash: approveTx,
+      });
+
+      if (approveTransaction.status === "reverted") {
         toast.error("Unable to approve tx. please try again");
         setIsProcessing(false);
         return;
@@ -83,7 +87,11 @@ export default function CheckoutModal({
         args: [BigInt(raffleBlockchainId), [bcNumbers]],
       });
 
-      if (!txHash) {
+      const transaction = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+
+      if (transaction.status === "reverted") {
         toast.error("Unable to join raffle.");
         setIsProcessing(false);
         return;
