@@ -25,7 +25,7 @@ export default function AdminPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const { data: totalRaffles } = useReadContract({
+  const { data: totalRaffles, refetch } = useReadContract({
     address: raffleUpAddress,
     abi: raffleUpAbi,
     functionName: 'raffleCount',
@@ -136,6 +136,13 @@ export default function AdminPage() {
 
       // Prize per winner
       const prizePerWinner = totalPrizePool / winners;
+
+      console.log("the id b4", totalRaffles);
+
+      if(totalRaffles == undefined){
+        await refetch();
+      }
+      console.log("after", totalRaffles);
 
       const databaseParams = {
         title: formData.name,

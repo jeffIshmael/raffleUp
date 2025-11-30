@@ -3,7 +3,11 @@
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { waitForTransactionReceipt } from "@wagmi/core";
-import { useAccount, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from "wagmi";
 import {
   cUSDAddress,
   raffleUpAbi,
@@ -38,7 +42,7 @@ export default function CheckoutModal({
   const [step, setStep] = useState<"review" | "confirm" | "success">("review");
   const [sendTxHash, setSendTxHash] = useState("");
   const { address, isConnected } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  const { data, writeContract, writeContractAsync } = useWriteContract();
   const router = useRouter();
   const explorerUrl = `https://sepolia.celoscan.io/tx/${sendTxHash}`;
 
@@ -53,9 +57,9 @@ export default function CheckoutModal({
       setStep("confirm");
 
       const totalAmountWei = parseEther(totalCost.toString());
-      const bcNumbers = selectedNumbers as unknown as BigInt[];
+      // Convert selected numbers → bigint[]
+      const bcNumbers = selectedNumbers.map((n) => BigInt(n));
 
-      console.log("The params:", totalAmountWei, bcNumbers);
 
       // approve
       const approveTx = await writeContractAsync({
@@ -76,7 +80,7 @@ export default function CheckoutModal({
         address: raffleUpAddress,
         abi: raffleUpAbi,
         functionName: "joinRaffle",
-        args: [BigInt(raffleBlockchainId), bcNumbers],
+        args: [BigInt(raffleBlockchainId), [bcNumbers]],
       });
 
       if (!txHash) {
@@ -84,6 +88,7 @@ export default function CheckoutModal({
         setIsProcessing(false);
         return;
       }
+
       setSendTxHash(txHash);
 
       // DB save
