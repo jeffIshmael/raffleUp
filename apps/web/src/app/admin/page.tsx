@@ -6,6 +6,7 @@ import { useWriteContract, useAccount, useReadContract } from "wagmi";
 import { raffleUpAbi, raffleUpAddress } from "@/Constants/constants";
 import { createRaffle } from "@/lib/prismaFunctions";
 import { parseEther } from "viem";
+import { publicClient } from "@/lib/viemClient";
 
 interface CreateRaffleForm {
   name: string;
@@ -117,10 +118,14 @@ export default function AdminPage() {
         ],
       });
 
-      if (!txHash) {
-        showError("Unable to create raffle.");
-        return;
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+
+      if (receipt.status === "reverted") {
+        throw new Error("Unable to create raffle. makle sure you are the admin.");
       }
+      console.log("receipt", receipt);
 
       const from = Number(formData.fromNumber);
       const to = Number(formData.toNumber);
@@ -137,12 +142,10 @@ export default function AdminPage() {
       // Prize per winner
       const prizePerWinner = totalPrizePool / winners;
 
-      console.log("the id b4", totalRaffles);
 
       if(totalRaffles == undefined){
         await refetch();
       }
-      console.log("after", totalRaffles);
 
       const databaseParams = {
         title: formData.name,
@@ -154,7 +157,7 @@ export default function AdminPage() {
         startNo: from,
         endNo: to,
         endDate: new Date(formData.endDate),
-        status: "not started",
+        status: "started",
       };
 
       console.log("registering to database...")
@@ -193,7 +196,6 @@ export default function AdminPage() {
   const handleDeleteRaffle = (raffleId: string) => {
     if (confirm("Are you sure you want to delete this raffle?")) {
       showSuccess("Raffle deleted successfully");
-      // In a real app, you'd call an API to delete the raffle
     }
   };
 

@@ -68,6 +68,8 @@ export async function getWinnersFromContract(
       return null;
     }
 
+    console.log("winnersData", winnersData);
+
     // Group by address to handle multiple wins
     const winnerMap = new Map<
       string,

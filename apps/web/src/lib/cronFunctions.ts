@@ -11,61 +11,107 @@ import {
   getWinnersFromContract,
 } from "./agentFunctions";
 
-export async function closeRaffle(blockchainId: number, raffleId: number) {
+export async function closeRaffle(
+  blockchainId: number,
+  raffleId: number
+): Promise<string | null> {
   try {
+
+
+    // 1. Execute closeRaffle on blockchain
     const txHash = await triggerCloseRaffle(blockchainId);
-    if (!txHash) return console.error("Close raffle failed");
+    if (!txHash) {
+      console.error(" Failed to execute closeRaffle on blockchain");
+      return null;
+    }
 
+    console.log(`✅ Blockchain transaction successful: ${txHash}`);
+
+    // 2. Fetch winners from contract
     const winners = await getWinnersFromContract(blockchainId);
-    if (!winners) return console.error("Unable to fetch winners");
+    if (!winners || winners.length === 0) {
+      console.error("❌ No winners returned from contract");
+      return null;
+    }
 
+    // 3. Save winners to database
     const saved = await saveWinnersToDatabase(raffleId, winners, txHash);
-    if (!saved) return console.error("Failed to save winners");
+    if (!saved) {
+      console.error(" Failed to save winners to database");
+      return null;
+    }
 
+    // 4. Update user winning status
     await updateUserWinningStatus(
       raffleId,
       winners.map((w) => w.address)
     );
 
-    console.log(`🏆 Raffle ${raffleId} closed`);
     return txHash;
   } catch (err) {
-    console.error("Error closing raffle:", err);
+    console.error(err);
+    return null;
   }
 }
 
-export async function refundRaffle(blockchainId: number, raffleId: number) {
+export async function refundRaffle(
+  blockchainId: number,
+  raffleId: number
+): Promise<string | null> {
   try {
+
+    // Execute refund on blockchain
     const txHash = await triggerRefundRaffle(blockchainId);
-    if (!txHash) return console.error(" Refund tx failed");
+    if (!txHash) {
+      console.error(" Failed to execute refund on blockchain");
+      return null;
+    }
 
-    await setRefunded(raffleId);
-    console.log(`💸 Raffle ${raffleId} refunded`);
+
+    // Update database
+    const updated = await setRefunded(raffleId);
+    if (!updated) {
+      console.error("Blockchain refunded but database not updated");
+    }
+
     return txHash;
   } catch (err) {
-    console.error(" Refund error:", err);
+    console.error(err);
+    return null;
   }
 }
 
-export async function checkRaffleEndDate() {
+export async function checkRaffleEndDate(): Promise<void> {
   try {
+
     const raffles = await checkEndDate();
 
     if (!raffles || raffles.length === 0) {
-      console.log(" No expired raffles to process.");
       return;
     }
 
-    for (const raffle of raffles) {
-      const entries = raffle.takenNos ? JSON.parse(raffle.takenNos) : [];
+    let processed = 0;
+    let failed = 0;
 
-      if (entries.length <= 1) {
-        await refundRaffle(raffle.blockchainId, raffle.id);
-      } else {
-        await closeRaffle(raffle.blockchainId, raffle.id);
+    for (const raffle of raffles) {
+      try {
+        const entries = raffle.takenNos ? JSON.parse(raffle.takenNos).length : 0;
+
+        if (entries <= 1) {
+          const result = await refundRaffle(raffle.blockchainId, raffle.id);
+          if (result) processed++;
+          else failed++;
+        } else {
+          const result = await closeRaffle(raffle.blockchainId, raffle.id);
+          if (result) processed++;
+          else failed++;
+        }
+      } catch (err) {
+        failed++;
       }
     }
   } catch (err) {
-    console.error(" Cron logic error:", err);
+    console.error(err);
+    throw err;
   }
 }

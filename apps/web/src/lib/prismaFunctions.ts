@@ -512,7 +512,6 @@ export async function saveWinnersToDatabase(
   transactionHash: string
 ): Promise<boolean> {
   try {
-    console.log(`Saving ${winners.length} winners to database...`);
 
     // Verify raffle exists
     const raffle = await prisma.raffle.findUnique({
@@ -520,50 +519,62 @@ export async function saveWinnersToDatabase(
     });
 
     if (!raffle) {
-      console.error("Raffle not found:", raffleId);
+      console.error(`❌ Raffle ${raffleId} not found in database`);
       return false;
     }
 
     // Save each winner
+    let savedCount = 0;
     for (const winner of winners) {
-      // Create or update winner record
-      await prisma.winner.upsert({
-        where: {
-          raffleId_userAddress: {
+      try {
+        await prisma.winner.upsert({
+          where: {
+            raffleId_userAddress: {
+              raffleId: raffleId,
+              userAddress: winner.address,
+            },
+          },
+          update: {
+            winningNumbers: JSON.stringify(winner.numbers),
+            amountWon: winner.amount,
+            transactionHash: transactionHash,
+          },
+          create: {
             raffleId: raffleId,
             userAddress: winner.address,
+            winningNumbers: JSON.stringify(winner.numbers),
+            amountWon: winner.amount,
+            transactionHash: transactionHash,
           },
-        },
-        update: {
-          winningNumbers: JSON.stringify(winner.numbers),
-          amountWon: winner.amount,
-          transactionHash: transactionHash,
-        },
-        create: {
-          raffleId: raffleId,
-          userAddress: winner.address,
-          winningNumbers: JSON.stringify(winner.numbers),
-          amountWon: winner.amount,
-          transactionHash: transactionHash,
-        },
-      });
+        });
 
-      console.log(
-        `✅ Saved: ${winner.address} won ${winner.numbers.length} number(s)`
-      );
+        savedCount++;
+        console.log(
+          `   ✅ Saved winner ${savedCount}/${winners.length}: ${winner.address}`
+        );
+      } catch (err) {
+        console.error(`   ❌ Failed to save winner ${winner.address}:`, err);
+      }
+    }
+
+    if (savedCount === 0) {
+      console.error("❌ Failed to save any winners");
+      return false;
     }
 
     // Update raffle status to closed
     await prisma.raffle.update({
       where: { id: raffleId },
-      data: {
-        status: "closed",
-      },
+      data: { status: "closed" },
     });
 
+    console.log(
+      `✅ Raffle ${raffleId} marked as closed. Saved ${savedCount}/${winners.length} winners.`
+    );
     return true;
   } catch (error) {
-    console.error("Error saving winners to database:", error);
+    console.error("❌ Error saving winners to database:", error);
+    console.error("Error details:", error);
     return false;
   }
 }
@@ -659,32 +670,48 @@ export async function updateUserWinningStatus(
   winnerAddresses: string[]
 ): Promise<void> {
   try {
+
+    let updatedCount = 0;
     for (const address of winnerAddresses) {
-      const user = await prisma.user.findUnique({
-        where: { address: address.toLowerCase() },
-      });
+      try {
+        const user = await prisma.user.findUnique({
+          where: { address: address.toLowerCase() },
+        });
 
-      if (!user || !user.raffleIds) continue;
+        if (!user) {
+          console.log(`   ⚠️ User ${address} not found in database`);
+          continue;
+        }
 
-      const raffleIds = JSON.parse(user.raffleIds);
+        if (!user.raffleIds) {
+          console.log(`   ⚠️ User ${address} has no raffleIds`);
+          continue;
+        }
 
-      // Update status to 'won' for this raffle
-      const updatedRaffleIds = raffleIds.map((item: any) => ({
-        ...item,
-        status: item.raffleId === raffleId ? "won" : item.status || "active",
-      }));
+        const raffleIds = JSON.parse(user.raffleIds);
 
-      await prisma.user.update({
-        where: { address: address.toLowerCase() },
-        data: {
-          raffleIds: JSON.stringify(updatedRaffleIds),
-        },
-      });
+        // Update status to 'won' for this raffle
+        const updatedRaffleIds = raffleIds.map((item: any) => ({
+          ...item,
+          status: item.raffleId === raffleId ? "won" : item.status || "active",
+        }));
 
-      console.log(`✅ Updated user ${address} status to 'won'`);
+        await prisma.user.update({
+          where: { address: address.toLowerCase() },
+          data: {
+            raffleIds: JSON.stringify(updatedRaffleIds),
+          },
+        });
+
+        updatedCount++;
+      } catch (err) {
+        console.error(`   ❌ Failed to update user ${address}:`, err);
+      }
     }
+
+    console.log(`✅ Updated ${updatedCount}/${winnerAddresses.length} users' winning status`);
   } catch (error) {
-    console.error("Error updating user winning status:", error);
+    console.error("❌ Error updating user winning status:", error);
   }
 }
 
@@ -711,16 +738,17 @@ export async function checkEndDate(): Promise<raffleType[] | null> {
 }
 
 // function to update a refund state to a raffle
-export async function setRefunded(raffleId: number) {
+export async function setRefunded(raffleId: number): Promise<boolean> {
   try {
-    // Update raffle status to refunded
-    const newRaffle = await prisma.raffle.update({
+    await prisma.raffle.update({
       where: { id: raffleId },
       data: { status: "refunded" },
     });
-    return newRaffle;
+
+    console.log(`✅ Raffle ${raffleId} marked as refunded`);
+    return true;
   } catch (error) {
-    console.log("an error setting refunded to db", error);
-    return null;
+    console.error(`❌ Error marking raffle ${raffleId} as refunded:`, error);
+    return false;
   }
 }

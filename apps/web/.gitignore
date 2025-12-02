@@ -4,3 +4,5 @@ node_modules
 
 /app/generated/prisma
 /src/lib/generated/prisma
+
+Test.ts
