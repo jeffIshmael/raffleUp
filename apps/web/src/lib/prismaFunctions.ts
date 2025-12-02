@@ -2,6 +2,7 @@
 import prisma from "@/lib/prisma";
 import { Ticket } from "@/types/raffle";
 import type { Raffle as raffleType } from "@/types/raffle";
+import { getWinnersFromContract } from "./agentFunctions";
 
 interface Raffle {
   title: string;
@@ -400,37 +401,28 @@ export async function getPastWinners() {
   try {
     const raffles = await prisma.raffle.findMany({
       where: {
-        endDate: {
-          lt: new Date(), // Only completed raffles
-        },
+        endDate: { lt: new Date() },
       },
-      orderBy: {
-        endDate: "desc",
-      },
+      orderBy: { endDate: "desc" },
     });
 
     const winners = [];
 
     for (const raffle of raffles) {
-      if (!raffle.chosenData) continue;
+      // Pull actual winners from the blockchain
+      const realWinners = await getWinnersFromContract(raffle.blockchainId);
 
-      const chosenData = JSON.parse(raffle.chosenData) as ChosenDataItem[];
+      if (!realWinners || realWinners.length === 0) continue;
 
-      // You can add logic here to determine actual winners
-      // For now, showing the last participant as example
-      // In production, this should come from a Winners table
-
-      for (const participant of chosenData) {
+      for (const winner of realWinners) {
         winners.push({
-          id: `${raffle.id}-${participant.buyer}`,
+          id: `${raffle.id}-${winner.address}`,
           raffleId: raffle.id,
           raffleName: raffle.title,
-          winner: `${participant.buyer.slice(0, 6)}...${participant.buyer.slice(
-            -4
-          )}`,
-          walletAddress: participant.buyer,
-          winningNumbers: participant.numbers,
-          amount: raffle.winningPrice,
+          winner: `${winner.address.slice(0, 6)}...${winner.address.slice(-4)}`,
+          walletAddress: winner.address,
+          winningNumbers: winner.numbers,
+          amount: (Number(winner.amount) / 1e18).toString(),
           date: new Date(raffle.endDate).toISOString().split("T")[0],
         });
       }
@@ -442,6 +434,7 @@ export async function getPastWinners() {
     return [];
   }
 }
+
 
 // Get user profile stats
 export async function getUserProfileStats(address: string) {

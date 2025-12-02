@@ -1,39 +1,29 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import ConfettiEffect from '@/components/ConfettiEffect';
-import { getPastWinners } from '@/lib/prismaFunctions';
+import { useEffect, useState } from "react";
+import ConfettiEffect from "@/components/ConfettiEffect";
+import { getPastWinners } from "@/lib/prismaFunctions";
 
-interface Winner {
-  id: string;
-  raffleId: number;
-  raffleName: string;
-  winner: string;
-  walletAddress: string;
-  winningNumbers: number[];
-  amount: string;
-  date: string;
-}
-
-type WinnersState = 'loading' | 'error' | 'success';
-
-export default function WinnersPage() {
-  const [winners, setWinners] = useState<Winner[]>([]);
-  const [pageState, setPageState] = useState<WinnersState>('loading');
-  const [errorMessage, setErrorMessage] = useState('');
+export default function PastWinners() {
+  const [pageState, setPageState] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
+  const [winners, setWinners] = useState<any[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const fetchWinners = async () => {
+    async function fetchWinners() {
       try {
-        setPageState('loading');
-        const data = await getPastWinners();
-        setWinners(data);
-        setPageState('success');
-      } catch (error) {
-        setPageState('error');
-        setErrorMessage('Failed to load winners');
+        const winners = await getPastWinners();
+
+        setWinners(winners);
+
+        setPageState("success");
+      } catch (err) {
+        setErrorMessage("Failed to load past winners");
+        setPageState("error");
       }
-    };
+    }
 
     fetchWinners();
   }, []);
@@ -56,7 +46,7 @@ export default function WinnersPage() {
       </div>
 
       {/* Loading */}
-      {pageState === 'loading' && (
+      {pageState === "loading" && (
         <div className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <div
@@ -68,7 +58,7 @@ export default function WinnersPage() {
       )}
 
       {/* Empty State */}
-      {pageState === 'success' && winners.length === 0 && (
+      {pageState === "success" && winners.length === 0 && (
         <div className="text-center py-16">
           <p className="text-6xl mb-4">🎲</p>
           <p className="text-gray-400 text-lg">No completed raffles yet</p>
@@ -76,11 +66,11 @@ export default function WinnersPage() {
       )}
 
       {/* Winners List */}
-      {pageState === 'success' && winners.length > 0 && (
+      {pageState === "success" && winners.length > 0 && (
         <div className="space-y-6">
           {winners.map((winner, idx) => (
             <div
-              key={winner.id}
+              key={`${winner.id}-${idx}`}
               className="border-2 border-amber-400 border-opacity-40 rounded p-6 lg:p-8
                 hover:border-opacity-100 transition-all duration-300
                 hover:shadow-lg hover:shadow-amber-400/20 group bg-black bg-opacity-30"
@@ -89,9 +79,12 @@ export default function WinnersPage() {
               }}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+                
                 {/* Raffle Name */}
                 <div>
-                  <p className="text-xs text-gray-400 font-semibold mb-2">RAFFLE</p>
+                  <p className="text-xs text-gray-400 font-semibold mb-2">
+                    RAFFLE
+                  </p>
                   <p className="text-xl font-bold text-amber-400">
                     {winner.raffleName}
                   </p>
@@ -99,17 +92,21 @@ export default function WinnersPage() {
 
                 {/* Winner Address */}
                 <div>
-                  <p className="text-xs text-gray-400 font-semibold mb-2">WINNER</p>
-                  <p className="text-lg font-mono text-gray-300">{winner.winner}</p>
+                  <p className="text-xs text-gray-400 font-semibold mb-2">
+                    WINNER
+                  </p>
+                  <p className="text-lg font-mono text-gray-300">
+                    {winner.winner}
+                  </p>
                 </div>
 
                 {/* Winning Numbers */}
                 <div>
                   <p className="text-xs text-gray-400 font-semibold mb-2">
-                    WINNING NUMBERS
+                    WINNING NUMBER
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {winner.winningNumbers.map((num) => (
+                    {winner.winningNumbers.map((num: number) => (
                       <span
                         key={num}
                         className="bg-amber-400 text-black px-3 py-1 rounded font-bold text-sm"
@@ -122,7 +119,9 @@ export default function WinnersPage() {
 
                 {/* Prize Amount */}
                 <div>
-                  <p className="text-xs text-gray-400 font-semibold mb-2">PRIZE</p>
+                  <p className="text-xs text-gray-400 font-semibold mb-2">
+                    PRIZE
+                  </p>
                   <p className="text-2xl font-bold text-green-400">
                     {winner.amount} cUSD
                   </p>
@@ -130,7 +129,9 @@ export default function WinnersPage() {
 
                 {/* Date */}
                 <div>
-                  <p className="text-xs text-gray-400 font-semibold mb-2">DATE</p>
+                  <p className="text-xs text-gray-400 font-semibold mb-2">
+                    DATE
+                  </p>
                   <p className="text-lg text-gray-300">{winner.date}</p>
                 </div>
 
@@ -140,6 +141,7 @@ export default function WinnersPage() {
                     🎉
                   </div>
                 </div>
+
               </div>
             </div>
           ))}
@@ -147,7 +149,7 @@ export default function WinnersPage() {
       )}
 
       {/* Error State */}
-      {pageState === 'error' && (
+      {pageState === "error" && (
         <div className="text-center py-16">
           <p className="text-6xl mb-4">⚠️</p>
           <p className="text-red-400 text-lg">{errorMessage}</p>
