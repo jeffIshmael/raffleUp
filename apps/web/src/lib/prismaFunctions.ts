@@ -38,10 +38,11 @@ export async function getRaffles() {
     const raffles = await prisma.raffle.findMany({
       where: {
         endDate: {
-          lte: new Date(Date.now()),
+          gte: new Date(Date.now()),
         },
       },
     });
+    console.log("raffles", raffles);
     return raffles;
   } catch (error) {
     console.error("Error getting raffles:", error);
