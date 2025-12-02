@@ -35,7 +35,13 @@ interface WinnerData {
 //   GET ALL RAFFLES
 export async function getRaffles() {
   try {
-    const raffles = await prisma.raffle.findMany();
+    const raffles = await prisma.raffle.findMany({
+      where: {
+        endDate: {
+          lte: new Date(Date.now()),
+        },
+      },
+    });
     return raffles;
   } catch (error) {
     console.error("Error getting raffles:", error);
