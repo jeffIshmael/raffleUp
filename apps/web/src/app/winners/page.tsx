@@ -122,7 +122,7 @@ export default function PastWinners() {
                   <p className="text-xs text-gray-400 font-semibold mb-2">
                     PRIZE
                   </p>
-                  <p className="text-2xl font-bold text-green-400">
+                  <p className="text-lg font-semibold text-green-400">
                     {winner.amount} cUSD
                   </p>
                 </div>

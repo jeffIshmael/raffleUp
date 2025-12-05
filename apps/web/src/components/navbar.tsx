@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAccount, useBalance } from "wagmi";
 import { ConnectButton } from "./connect-button";
 import { cUSDAddress } from "../Constants/constants";
+import Image from "next/image";
 
 export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -13,13 +14,12 @@ export default function Navbar() {
   const { address, isConnected } = useAccount();
   const pathname = usePathname();
 
-  // Fetch cUSD wallet balance 
+  // Fetch cUSD wallet balance
   const { data: balanceData } = useBalance({
     address: address,
-    chainId: 11142220, 
-    token: cUSDAddress, 
+    chainId: 11142220,
+    token: cUSDAddress,
   });
-
 
   const walletBalance = balanceData?.formatted
     ? parseFloat(balanceData.formatted).toFixed(2)
@@ -28,7 +28,10 @@ export default function Navbar() {
   useEffect(() => {
     if (!address) return;
 
-    if (address.toLowerCase() === "0x4821ced48fb4456055c86e42587f61c1f39c6315".toLowerCase()) {
+    if (
+      address.toLowerCase() ===
+      "0x4821ced48fb4456055c86e42587f61c1f39c6315".toLowerCase()
+    ) {
       setIsAdmin(true);
     }
   }, [address]);
@@ -55,9 +58,15 @@ export default function Navbar() {
         border-b border-amber-400 border-opacity-20"
       >
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
-          
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold tracking-wider">
+          <Link href="/" className="text-2xl font-bold tracking-wider flex items-center gap-2">
+            <Image
+              src="/images/raffleup.jpg"
+              alt="RaffleUp"
+              width={50}
+              height={50}
+              className="rounded-2xl w-16 h-16"
+            />
             <span className="text-white">RAFFLE</span>
             <span className="text-amber-400 ml-2">UP</span>
           </Link>
@@ -71,7 +80,10 @@ export default function Navbar() {
               <Link href="/winners" className={navLinkClasses("/winners")}>
                 Past Draws
               </Link>
-              <Link href="/my-tickets" className={navLinkClasses("/my-tickets")}>
+              <Link
+                href="/my-tickets"
+                className={navLinkClasses("/my-tickets")}
+              >
                 My Tickets
               </Link>
               <Link href="/profile" className={navLinkClasses("/profile")}>
@@ -104,13 +116,11 @@ export default function Navbar() {
         border-b border-amber-400 border-opacity-20 px-4 py-4
         flex items-center justify-between"
       >
-
         {/* Logo */}
         <Link href="/" className="text-2xl font-bold tracking-wider">
           <span className="text-white">RAFFLE</span>
           <span className="text-amber-400 ml-1">UP</span>
         </Link>
-      
 
         {/* Wallet Balance + Button */}
         <div className="flex items-center gap-3">
@@ -125,4 +135,3 @@ export default function Navbar() {
     </>
   );
 }
-

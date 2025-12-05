@@ -8,6 +8,7 @@ import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
 import { getRaffles } from "@/lib/prismaFunctions";
 import type { Raffle } from "@/types/raffle";
+import Image from "next/image";
 
 type PageState = "loading" | "empty" | "error" | "success";
 
@@ -55,6 +56,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="mb-16 text-center">
         <div className="relative mb-8">
+         
           <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-tight">
             <span className="text-white">RAFFLE</span>
             <span className="text-amber-400 ml-3">UP</span>
