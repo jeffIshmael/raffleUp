@@ -8,7 +8,6 @@ import ErrorState from "@/components/ErrorState";
 import EmptyState from "@/components/EmptyState";
 import { getRaffles } from "@/lib/prismaFunctions";
 import type { Raffle } from "@/types/raffle";
-import Image from "next/image";
 
 type PageState = "loading" | "empty" | "error" | "success";
 
@@ -17,6 +16,7 @@ export default function Home() {
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [pageState, setPageState] = useState<PageState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
+
 
   useEffect(() => {
     const fetchRaffles = async () => {
@@ -51,12 +51,12 @@ export default function Home() {
     window.location.reload();
   };
 
+
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
       {/* Hero Section */}
       <section className="mb-16 text-center">
         <div className="relative mb-8">
-         
           <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-tight">
             <span className="text-white">RAFFLE</span>
             <span className="text-amber-400 ml-3">UP</span>

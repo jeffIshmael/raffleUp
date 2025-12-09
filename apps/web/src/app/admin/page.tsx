@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRaffles } from "@/hooks/useRaffles";
 import { useWriteContract, useAccount, useReadContract } from "wagmi";
 import { raffleUpAbi, raffleUpAddress } from "@/Constants/constants";
@@ -26,11 +26,12 @@ export default function AdminPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const { data: totalRaffles, refetch } = useReadContract({
     address: raffleUpAddress,
     abi: raffleUpAbi,
-    functionName: 'raffleCount',
-  })
+    functionName: "raffleCount",
+  });
 
   const [formData, setFormData] = useState<CreateRaffleForm>({
     name: "",
@@ -53,6 +54,20 @@ export default function AdminPage() {
     setErrorMessage(message);
     setTimeout(() => setErrorMessage(""), 3000);
   };
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!address) {
+        setIsAdmin(false);
+        return;
+      }
+      setIsAdmin(
+        address.toString().toLowerCase() ===
+          "0x4821ced48fb4456055c86e42587f61c1f39c6315".toLowerCase()
+      );
+    };
+    checkAdmin();
+  }, [address]);
 
   const handleFormChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -99,11 +114,9 @@ export default function AdminPage() {
       new Date(formData.endDate).getTime() / 1000
     );
 
-
     try {
       setIsCreating(true);
       const ticketPriceWei = parseEther(formData.ticketPrice);
-
 
       // Write to the smart contract
       const txHash = await writeContractAsync({
@@ -123,7 +136,9 @@ export default function AdminPage() {
       });
 
       if (receipt.status === "reverted") {
-        throw new Error("Unable to create raffle. makle sure you are the admin.");
+        throw new Error(
+          "Unable to create raffle. makle sure you are the admin."
+        );
       }
       console.log("receipt", receipt);
 
@@ -142,8 +157,7 @@ export default function AdminPage() {
       // Prize per winner
       const prizePerWinner = totalPrizePool / winners;
 
-
-      if(totalRaffles == undefined){
+      if (totalRaffles == undefined) {
         await refetch();
       }
 
@@ -160,14 +174,12 @@ export default function AdminPage() {
         status: "started",
       };
 
-      console.log("registering to database...")
+      console.log("registering to database...");
 
       // register to database
       const raffle = await createRaffle(databaseParams);
       if (!raffle) {
         throw new Error("unable to use prisama.");
-        showError("Not able to create the raffle.");
-        return;
       }
 
       showSuccess(`Raffle "${formData.name}" created successfully!`);
@@ -220,6 +232,62 @@ export default function AdminPage() {
     }
   };
 
+  // Show wallet connection prompt if not connected
+  if (!isConnected) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center border-2 border-amber-400 border-opacity-30 rounded-lg p-12 bg-black bg-opacity-50 max-w-md">
+            <span className="text-6xl mb-6 block">🔒</span>
+            <h2 className="text-3xl font-bold text-amber-400 mb-4">
+              Wallet Required
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Please connect your wallet to access the admin dashboard.
+            </p>
+            <div className="bg-amber-400 bg-opacity-10 border border-amber-400 border-opacity-30 rounded p-4">
+              <p className="text-sm text-gray-400">
+                Click the "Connect Wallet" button in the header to continue.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show unauthorized message if connected but not admin
+  if (isConnected && !isAdmin) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center border-2 border-red-500 border-opacity-30 rounded-lg p-12 bg-black bg-opacity-50 max-w-md">
+            <span className="text-6xl mb-6 block">⛔</span>
+            <h2 className="text-3xl font-bold text-red-400 mb-4">
+              Access Denied
+            </h2>
+            <p className="text-gray-300 mb-6">
+              This is an admin-only page. Your wallet address does not have
+              administrative privileges.
+            </p>
+            <div className="bg-red-500 bg-opacity-10 border border-red-500 border-opacity-30 rounded p-4 mb-4">
+              <p className="text-sm text-gray-400 font-mono break-all">
+                Connected: {address}
+              </p>
+            </div>
+            <button
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-gray-600 text-white font-semibold rounded hover:bg-gray-500 transition-colors"
+            >
+              ← Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main admin dashboard (only shown if connected and is admin)
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
       {/* Header */}
@@ -510,7 +578,6 @@ export default function AdminPage() {
 
             {/* Start & End Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-
               <div>
                 <label className="block text-gray-300 font-semibold mb-2">
                   End Date *
@@ -558,7 +625,7 @@ export default function AdminPage() {
               {/* Warning if invalid */}
               {Number(formData.toNumber) <= Number(formData.fromNumber) && (
                 <p className="text-red-400 col-span-2 text-sm">
-                  ⚠ “To Number” must be greater than “From Number”.
+                  ⚠ "To Number" must be greater than "From Number".
                 </p>
               )}
             </div>
