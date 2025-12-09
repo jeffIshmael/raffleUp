@@ -20,6 +20,7 @@ export interface Ticket {
     raffle: {
       id: number;
       title: string;
+      blockchainId: number;
       description: string;
       ticketPrice: string;
       winningPrice: string;

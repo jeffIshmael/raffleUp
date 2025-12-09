@@ -294,6 +294,7 @@ export async function getUserActiveTickets(address: string): Promise<Ticket[]> {
         raffle: {
           id: raffle.id,
           title: raffle.title,
+          blockchainId: raffle.blockchainId,
           description: raffle.description,
           ticketPrice: raffle.ticketPrice,
           winningPrice: raffle.winningPrice,
@@ -348,8 +349,21 @@ export async function getUserRaffleHistory(address: string): Promise<Ticket[]> {
       const raffleEndDate = new Date(raffle.endDate);
 
       if (raffleEndDate < now) {
-        ticketStatus = "lost"; // Default to lost for ended raffles
-        // Add winner check logic here if you have a winners table
+        // Check if user is a winner for this raffle
+        const winnerRecord = await prisma.winner.findUnique({
+          where: {
+            raffleId_userAddress: {
+              raffleId: data.raffleId,
+              userAddress: address,
+            },
+          },
+        });
+
+        if (winnerRecord) {
+          ticketStatus = "won";
+        } else {
+          ticketStatus = "lost";
+        }
       }
 
       const ticket: Ticket = {
@@ -358,6 +372,7 @@ export async function getUserRaffleHistory(address: string): Promise<Ticket[]> {
         raffle: {
           id: raffle.id,
           title: raffle.title,
+          blockchainId: raffle.blockchainId,
           description: raffle.description,
           ticketPrice: raffle.ticketPrice,
           winningPrice: raffle.winningPrice,
@@ -435,7 +450,6 @@ export async function getPastWinners() {
   }
 }
 
-
 // Get user profile stats
 export async function getUserProfileStats(address: string) {
   try {
@@ -505,7 +519,6 @@ export async function saveWinnersToDatabase(
   transactionHash: string
 ): Promise<boolean> {
   try {
-
     // Verify raffle exists
     const raffle = await prisma.raffle.findUnique({
       where: { id: raffleId },
@@ -663,7 +676,6 @@ export async function updateUserWinningStatus(
   winnerAddresses: string[]
 ): Promise<void> {
   try {
-
     let updatedCount = 0;
     for (const address of winnerAddresses) {
       try {
@@ -702,7 +714,9 @@ export async function updateUserWinningStatus(
       }
     }
 
-    console.log(`✅ Updated ${updatedCount}/${winnerAddresses.length} users' winning status`);
+    console.log(
+      `✅ Updated ${updatedCount}/${winnerAddresses.length} users' winning status`
+    );
   } catch (error) {
     console.error("❌ Error updating user winning status:", error);
   }

@@ -145,7 +145,7 @@ export default function NumberGrid({
       {/* Tips Section */}
       <div className="mt-8 p-4 bg-amber-400 bg-opacity-5 border border-amber-400 border-opacity-20 rounded text-sm text-gray-300">
         <p>
-          💡 <strong>Tip:</strong> Click on available numbers (blue outline) to select them.
+          💡 <strong>Tip:</strong> Click on available numbers (yellow outline) to select them.
           You can choose as many numbers as you want. Gray numbers are already taken by other players.
         </p>
       </div>
